@@ -14,15 +14,23 @@ const panelRoutes = require('./routes/panels');
 
 const { startAgenda } = require('./config/agenda');
 
-// Socket.io
+const compression = require('compression');
 const http = require('http');
 const { Server } = require('socket.io');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust Render's proxy for rate limiting to work correctly
+app.set('trust proxy', 1);
+
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, { 
+  cors: { 
+    origin: process.env.FRONTEND_URL || '*',
+    methods: ["GET", "POST"]
+  } 
+});
 
 // Socket.io connection logic
 io.on('connection', (socket) => {
@@ -32,12 +40,21 @@ io.on('connection', (socket) => {
   });
 });
 
-// ─── Security Middleware ─────────────────────────────────────────────────────
+// ─── Middleware ──────────────────────────────────────────────────────────────
 app.use(helmet());
+app.use(compression()); // Compress all responses
 app.use(cors({
-  origin: [process.env.FRONTEND_URL, 'http://localhost:5174', 'http://localhost:5173'],
+  origin: process.env.FRONTEND_URL || '*',
   credentials: true,
 }));
+
+// Simple Request Logger
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+  });
+}
 
 // Rate limiting: 200 requests per 15 minutes per IP
 app.use('/api/', rateLimit({
@@ -87,7 +104,7 @@ mongoose
   })
   .then(async () => {
     console.log('[DB] Connected to MongoDB');
-    
+
     // Start Agenda jobs
     await startAgenda(io);
 
