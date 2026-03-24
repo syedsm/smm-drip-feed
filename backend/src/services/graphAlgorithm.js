@@ -47,7 +47,8 @@ function generateSchedule(template, startDate = new Date()) {
     effectiveMinViews = Math.max(effectiveMinViews, 120);
   }
 
-  let cumulativeTime = startDate.getTime() + (1 * 60 * 1000); // Start 1 min from now
+  // let cumulativeTime = startDate.getTime() + (1 * 60 * 1000); // Start 1 min from now
+  let cumulativeTime = startDate.getTime() + (60 * 60 * 1000); // Start 1 hour from now
 
   const schedule = [];
   let allocatedViews = 0;
