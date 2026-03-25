@@ -127,15 +127,15 @@ export default function Panels() {
               <div className="card-body">
                 <div className="flex items-center justify-between mb-4">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(0,212,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Server size={16} color="#00d4ff" />
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--cyan-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Server size={16} color="var(--cyan)" />
                     </div>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
                         {p.name}
-                        {p.isDefault && <CheckCircle size={14} color="#34d399" title="Default Panel" />}
+                        {p.isDefault && <CheckCircle size={14} color="var(--green)" title="Default Panel" />}
                       </div>
-                      <div style={{ fontSize: 11, color: p.isActive ? '#34d399' : '#f87171', marginTop: 2, fontWeight: 600 }}>
+                      <div style={{ fontSize: 11, color: p.isActive ? 'var(--green)' : 'var(--red)', marginTop: 2, fontWeight: 600 }}>
                         {p.isActive ? 'ACTIVE' : 'INACTIVE'}
                       </div>
                     </div>
@@ -146,10 +146,10 @@ export default function Panels() {
                   </div>
                 </div>
 
-                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '12px', fontSize: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ background: 'var(--bg-primary)', borderRadius: 8, padding: '12px', fontSize: 12, display: 'flex', flexDirection: 'column', gap: 8, border: '1px solid var(--border)' }}>
                   <div className="flex flex-col gap-1">
                     <span className="text-muted">API URL</span>
-                    <span className="font-mono text-secondary truncate" title={p.apiUrl}>{p.apiUrl}</span>
+                    <span className="font-mono text-secondary truncate" title={p.apiUrl} style={{ color: 'var(--text-secondary)' }}>{p.apiUrl}</span>
                   </div>
                 </div>
               </div>

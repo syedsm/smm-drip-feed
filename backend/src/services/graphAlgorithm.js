@@ -32,20 +32,9 @@ function generateSchedule(template, startDate = new Date()) {
     totalLikes = 0
   } = template;
 
-  // 1. Adaptive Batching: scale ranges if the total is large
-  let effectiveMaxViews = maxViewsPerCycle;
+  // 1. Strict Range Settings: strictly follow user inputs with a 100-view panel floor
   let effectiveMinViews = Math.max(minViewsPerCycle, 100); // Panel safety: min 100
-
-  if (maxViewsTotal >= 5000) {
-    effectiveMaxViews = Math.max(maxViewsPerCycle, 600);
-    effectiveMinViews = Math.max(effectiveMinViews, 300);
-  } else if (maxViewsTotal >= 2500) {
-    effectiveMaxViews = Math.max(maxViewsPerCycle, 450);
-    effectiveMinViews = Math.max(effectiveMinViews, 200);
-  } else if (maxViewsTotal >= 1000) {
-    effectiveMaxViews = Math.max(maxViewsPerCycle, 300);
-    effectiveMinViews = Math.max(effectiveMinViews, 120);
-  }
+  let effectiveMaxViews = Math.max(maxViewsPerCycle, effectiveMinViews);
 
   let cumulativeTime = startDate.getTime() + (1 * 60 * 1000); // Start 1 min from now
 

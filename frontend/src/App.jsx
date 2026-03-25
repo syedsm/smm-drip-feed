@@ -33,8 +33,8 @@ export default function App() {
     <div className="app-layout">
       {/* Sidebar */}
       <aside className="sidebar">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <div className="sidebar-logo" style={{ marginBottom: 0 }}>
+        <div className="sidebar-header">
+          <div className="sidebar-logo">
             <div className="sidebar-logo-icon">⚡</div>
             <div>
               <div className="sidebar-logo-text">DripFeed</div>
@@ -42,14 +42,13 @@ export default function App() {
             </div>
           </div>
           
-          {/* Mobile Toggles */}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div className="flex gap-2 items-center" style={{ marginTop: 12 }}>
             <button className="btn btn-sm btn-secondary" onClick={toggleTheme} style={{ padding: 8 }} title="Toggle Theme">
               {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
             </button>
             <button 
-              className="btn btn-sm btn-secondary" 
-              style={{ padding: 8, display: window.innerWidth <= 768 ? 'flex' : 'none' }} 
+              className="btn btn-sm btn-secondary mobile-only" 
+              style={{ padding: 8 }} 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}

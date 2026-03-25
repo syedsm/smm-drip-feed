@@ -10,16 +10,21 @@ const agenda = new Agenda({
 const defineDecisionMaker = require('../jobs/decisionMaker');
 const defineDripDelivery = require('../jobs/dripDelivery');
 
-const startAgenda = async (io) => {
-  // Pass socket.io instance to jobs that need it
+// This function defines the jobs but does NOT start the worker
+const defineJobs = (io = null) => {
   defineDecisionMaker(agenda);
   defineDripDelivery(agenda, io);
+  console.log('[Agenda] Jobs defined');
+};
+
+const startAgenda = async (io = null) => {
+  defineJobs(io);
 
   await agenda.start();
-  console.log('[Agenda] Started successfully');
+  console.log('[Agenda] Started successfully (processing jobs)');
 
-  // Schedule the decision maker job
+  // Schedule the decision maker job if not already scheduled
   await agenda.every('1 minute', 'check-drip');
 };
 
-module.exports = { agenda, startAgenda };
+module.exports = { agenda, defineJobs, startAgenda };

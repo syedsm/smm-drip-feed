@@ -78,6 +78,8 @@ module.exports = (agenda, io) => {
         slot.delivered = true;
         order.delivered += 1;
         
+        console.log(`[Agenda] Successfully delivered slot ${slot.tick} for order ${order._id}`);
+
         // Find next slot for scheduling
         const nextSlot = order.schedule.find((s, idx) => idx > slotIndex && !s.delivered);
         if (nextSlot) {
@@ -92,7 +94,9 @@ module.exports = (agenda, io) => {
         const retryAt = new Date();
         retryAt.setMinutes(retryAt.getMinutes() + 2);
         order.nextDripAt = retryAt;
-        console.error(`[Agenda] Partial failure for order ${order._id}. Slot ${slot.tick} will retry.`);
+        
+        const errorMsg = [viewsRes.error, likesRes.error].filter(Boolean).join(' | ');
+        console.error(`[Agenda] Partial failure for order ${order._id}. Slot ${slot.tick} will retry. Error: ${errorMsg}`);
       }
 
       // Create delivery log entry
@@ -110,17 +114,8 @@ module.exports = (agenda, io) => {
 
       await order.save();
 
-      // Emit socket event for real-time progress
-      if (io) {
-        io.emit('order-update', {
-          orderId: order._id,
-          delivered: order.delivered,
-          deliveredViews: order.deliveredViews,
-          deliveredLikes: order.deliveredLikes,
-          status: order.status,
-          nextDripAt: order.nextDripAt
-        });
-      }
+      // Real-time progress is now handled via MongoDB Change Streams in the Web Service.
+      // No more io.emit here.
     } catch (error) {
       console.error(`[Agenda] Error in drip-delivery for order ${orderId}:`, error.message);
     }

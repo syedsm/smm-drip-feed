@@ -1,9 +1,10 @@
 // src/pages/Orders.jsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, ArrowRight, Trash2, Pause, Play, Settings2, FileText, Server, Clock } from 'lucide-react';
+import { Plus, ArrowRight, Trash2, Pause, Play, Settings2, FileText, Server, Clock, ShoppingBag, Eye, ThumbsUp, Layers, Link as LinkIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getOrders, createOrder, deleteOrder, updateOrderStatus, getTemplates, getPanels } from '../services/api';
+import PlatformIcon from '../components/PlatformIcon';
 
 const PLATFORMS = ['instagram', 'youtube', 'tiktok', 'twitter', 'facebook', 'other'];
 
@@ -24,7 +25,7 @@ function Countdown({ targetDate }) {
   }, [targetDate]);
   if (!targetDate) return null;
   return (
-    <span style={{ fontSize: 12, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+    <span style={{ fontSize: 12, color: 'var(--yellow)', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
       <Clock size={12} /> {timeLeft}
     </span>
   );
@@ -44,6 +45,7 @@ function CreateOrderModal({ onClose, onCreated }) {
     panelId: '',
     templateId: '',
     notes: '',
+    startDelay: 10, // Default 10 mins delay
   });
 
   useEffect(() => {
@@ -83,7 +85,8 @@ function CreateOrderModal({ onClose, onCreated }) {
         platform: form.platform,
         panelId: form.panelId,
         templateId: form.templateId,
-        notes: form.notes
+        notes: form.notes,
+        startDelay: form.startDelay
       };
 
       await createOrder(payload);
@@ -163,9 +166,13 @@ function CreateOrderModal({ onClose, onCreated }) {
               </div>
 
             <div className="form-row mt-4">
-              <div className="form-group" style={{ flex: 1 }}>
+              <div className="form-group" style={{ flex: 2 }}>
                 <label className="form-label">Notes</label>
-                <input className="form-input" value={form.notes} onChange={set('notes')} placeholder="Optional..." />
+                <input className="form-input" value={form.notes} onChange={set('notes')} placeholder="Optional notes..." />
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Start Delay (Mins)</label>
+                <input className="form-input" type="number" min="0" value={form.startDelay} onChange={set('startDelay')} placeholder="0" />
               </div>
             </div>
 
@@ -282,7 +289,7 @@ export default function Orders() {
       ) : orders.length === 0 ? (
         <div className="card"><div className="card-body">
           <div className="empty-state">
-            <div className="empty-state-icon">📭</div>
+            <div className="empty-state-icon"><ShoppingBag size={48} /></div>
             <div className="empty-state-title">No orders {filter ? `with status "${filter}"` : 'yet'}</div>
             <div className="empty-state-desc">Create your first drip-feed order to begin a campaign.</div>
           </div>
@@ -298,14 +305,18 @@ export default function Orders() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
                         <span className={`badge badge-${order.status}`}>
-                          {order.status === 'running' && <span className="pulse-dot" />}
+                          {order.status === 'running' && <span className="pulse-dot" style={{ marginRight: 6 }} />}
                           {order.status}
                         </span>
-                        <span style={{ fontSize: 12, color: '#4a5568', textTransform: 'uppercase', fontWeight: 600 }}>{order.platform}</span>
-                        {order.template && <span style={{ fontSize: 12, color: '#63b3ed' }}>📋 {order.template.name}</span>}
+                        <PlatformIcon platform={order.platform} size={14} />
+                        {order.template && (
+                          <span className="flex items-center gap-1" style={{ fontSize: 12, color: 'var(--purple)', fontWeight: 600 }}>
+                            <Layers size={12} /> {order.template.name}
+                          </span>
+                        )}
                       </div>
-                      <div className="font-mono truncate" style={{ maxWidth: '80%', fontSize: 13, color: '#94a3b8' }} title={order.socialLink}>
-                        {order.socialLink}
+                      <div className="font-mono truncate" style={{ maxWidth: '80%', fontSize: 13, color: 'var(--text-secondary)' }} title={order.socialLink}>
+                        <LinkIcon size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} /> {order.socialLink}
                       </div>
                       
                       {/* Live Timer Line */}
@@ -334,15 +345,15 @@ export default function Orders() {
                     <div className="progress-label">
                       <span>Drip Progress</span>
                       <span className="truncate" style={{ maxWidth: '60%', textAlign: 'right' }} title={order.botStatus}>
-                        {order.delivered || 0} drops completed
+                        {order.completedTicks || 0} / {order.totalTicks || 0} rounds
                       </span>
                     </div>
                     <div className="progress-bar">
                       <div className="progress-fill" style={{ width: `${pct}%` }} />
                     </div>
                     <div className="progress-label">
-                      <span className="text-cyan">👁 Total Delivered: {order.delivered || 0}</span>
-                      <span className="text-green">Status: {order.status}</span>
+                      <span className="text-cyan"><Eye size={12} /> {order.deliveredViews?.toLocaleString()}</span>
+                      <span className="text-green"><ThumbsUp size={12} /> {order.deliveredLikes?.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>

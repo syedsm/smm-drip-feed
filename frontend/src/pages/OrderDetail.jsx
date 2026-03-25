@@ -5,15 +5,16 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar,
 } from 'recharts';
-import { Pause, Play, ArrowLeft, Download, RefreshCw, Clock, Eye, ThumbsUp, Zap } from 'lucide-react';
+import { Pause, Play, ArrowLeft, Download, RefreshCw, Clock, Eye, ThumbsUp, Zap, Activity, Link as LinkIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getOrder, getOrderReport, deleteOrder, updateOrderStatus } from '../services/api';
+import PlatformIcon from '../components/PlatformIcon';
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: '#0e1628', border: '1px solid rgba(99,179,237,0.2)', borderRadius: 10, padding: '10px 14px', fontSize: 12 }}>
-      <p style={{ color: '#94a3b8', marginBottom: 6 }}>Tick {label}</p>
+    <div className="card" style={{ padding: '10px 14px', fontSize: 12, border: '1px solid var(--border)' }}>
+      <p style={{ color: 'var(--text-muted)', marginBottom: 6 }}>Tick {label}</p>
       {payload.map(p => (
         <p key={p.name} style={{ color: p.color, marginBottom: 2 }}>
           {p.name}: <strong>{Number(p.value).toLocaleString()}</strong>
@@ -40,7 +41,7 @@ function Countdown({ targetDate }) {
   }, [targetDate]);
   if (!targetDate) return null;
   return (
-    <span style={{ fontSize: 13, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, background: 'rgba(251,191,36,0.1)', padding: '4px 10px', borderRadius: 6 }}>
+    <span style={{ fontSize: 13, color: 'var(--yellow)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, background: 'var(--yellow-dim)', padding: '4px 10px', borderRadius: 6 }}>
       <Clock size={14} /> Next Drop In: {timeLeft}
     </span>
   );
@@ -138,16 +139,18 @@ export default function OrderDetail() {
         <div className="flex items-center gap-3" style={{ marginBottom: 12 }}>
           <Link to="/orders" className="btn btn-sm btn-secondary" style={{ textDecoration: 'none' }}><ArrowLeft size={13} /> Back</Link>
           <span className={`badge badge-${order.status}`}>
-            {order.status === 'running' && <span className="pulse-dot" />}
+            {order.status === 'running' && <span className="pulse-dot" style={{ marginRight: 6 }} />}
             {order.status}
           </span>
-          <span style={{ fontSize: 12, color: '#4a5568', textTransform: 'uppercase', fontWeight: 600 }}>{order.platform}</span>
+          <PlatformIcon platform={order.platform} size={14} />
         </div>
         <div className="page-header-row">
           <div>
             <h1 className="page-title" style={{ fontSize: 20 }}>Order Detail</h1>
-            <p className="page-subtitle font-mono" style={{ marginBottom: 4 }}>{order.socialLink}</p>
-            <p style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
+            <p className="page-subtitle font-mono" style={{ marginBottom: 4 }}>
+              <LinkIcon size={12} style={{ marginRight: 4 }} /> {order.socialLink}
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
               <Zap size={10} style={{ display: 'inline', marginRight: 2 }} /> Views Service ID: {order.viewsServiceId || 'N/A'} &nbsp;|&nbsp; 
               <ThumbsUp size={10} style={{ display: 'inline', marginLeft: 6, marginRight: 2 }} /> Likes Service ID: {order.likesServiceId || 'N/A'}
             </p>
@@ -157,7 +160,7 @@ export default function OrderDetail() {
               return nextSlot ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Countdown targetDate={nextSlot.scheduledAt} />
-                  <span style={{ fontSize: 12, color: '#94a3b8' }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                     Targeting <strong>{nextSlot.views} views</strong> {nextSlot.likes > 0 && `and ${nextSlot.likes} likes`}
                   </span>
                 </div>
@@ -186,15 +189,15 @@ export default function OrderDetail() {
       {/* Summary Cards */}
       <div className="grid grid-4" style={{ marginBottom: 24 }}>
         {[
-          { label: 'Bot Tracker', value: `${pct}%`, sub: order.botStatus || 'Initializing...', color: '#00d4ff', icon: Zap },
-          { label: 'Views Delivered', value: order.deliveredViews.toLocaleString(), sub: `of ${order.totalViews.toLocaleString()}`, color: '#a78bfa', icon: Eye },
-          { label: 'Likes Delivered', value: order.deliveredLikes.toLocaleString(), sub: `of ${order.totalLikes.toLocaleString()}`, color: '#34d399', icon: ThumbsUp },
-          { label: 'Likes/Views Ratio', value: `${likesViewsRatio}%`, sub: 'Overall Campaign Avg', color: '#fbbf24', icon: Clock },
+          { label: 'Bot Tracker', value: `${pct}%`, sub: order.botStatus || 'Initializing...', color: 'cyan', icon: Zap },
+          { label: 'Views Delivered', value: order.deliveredViews.toLocaleString(), sub: `of ${order.totalViews.toLocaleString()}`, color: 'purple', icon: Eye },
+          { label: 'Likes Delivered', value: order.deliveredLikes.toLocaleString(), sub: `of ${order.totalLikes.toLocaleString()}`, color: 'green', icon: ThumbsUp },
+          { label: 'Likes/Views Ratio', value: `${likesViewsRatio}%`, sub: 'Overall Campaign Avg', color: 'yellow', icon: Clock },
         ].map(({ label, value, sub, color, icon: Icon }) => (
-          <div key={label} className="card stat-card">
-            <div className="stat-card-icon" style={{ background: `${color}18` }}><Icon size={16} color={color} /></div>
+          <div key={label} className={`card stat-card border-${color}`}>
+            <div className="stat-card-icon" style={{ background: `var(--${color}-dim)` }}><Icon size={16} style={{ color: `var(--${color})` }} /></div>
             <div className="stat-card-label">{label}</div>
-            <div className="stat-card-value" style={{ color }}>{value}</div>
+            <div className="stat-card-value" style={{ color: `var(--${color})` }}>{value}</div>
             <div className="stat-card-sub">{sub}</div>
           </div>
         ))}
@@ -260,7 +263,7 @@ export default function OrderDetail() {
             <p className="text-muted" style={{ fontSize: 14, paddingTop: 8 }}>No deliveries yet. The background scheduler will process ticks automatically.</p>
           ) : (
             <div className="table-wrapper">
-              <table>
+              <table className="responsive-table">
                 <thead>
                   <tr>
                     <th>Tick</th>
@@ -273,15 +276,15 @@ export default function OrderDetail() {
                 <tbody>
                   {logs.map(log => (
                     <tr key={log.tick}>
-                      <td><span style={{ fontWeight: 700 }}>#{log.tick}</span></td>
-                      <td className="text-cyan">{log.views.toLocaleString()}</td>
-                      <td className="text-green">{log.likes.toLocaleString()}</td>
-                      <td>
+                      <td data-label="Tick"><span style={{ fontWeight: 700 }}>#{log.tick}</span></td>
+                      <td data-label="Views" className="text-cyan">{log.views.toLocaleString()}</td>
+                      <td data-label="Likes" className="text-green">{log.likes.toLocaleString()}</td>
+                      <td data-label="Status">
                         {log.success
                           ? <span className="badge badge-completed" style={{ background: 'rgba(52,211,153,0.1)', color: '#34d399' }}>✓ OK</span>
                           : <span className="badge badge-failed" title={log.errorMessage} style={{ background: 'rgba(248,113,113,0.1)', color: '#f87171' }}>✗ {log.errorMessage || 'Error'}</span>}
                       </td>
-                      <td style={{ color: '#4a5568', fontSize: 12 }}>{new Date(log.deliveredAt).toLocaleString()}</td>
+                      <td data-label="Delivered At" style={{ color: '#4a5568', fontSize: 12 }}>{new Date(log.deliveredAt).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>

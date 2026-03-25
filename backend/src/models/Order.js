@@ -56,6 +56,7 @@ const orderSchema = new mongoose.Schema(
     notes: { type: String, default: '' },
     dripInterval: { type: Number, default: 30 },
     nextDripAt: { type: Date },
+    startDelay: { type: Number, default: 0 },
     delivered: { type: Number, default: 0 },
   },
   { timestamps: true }

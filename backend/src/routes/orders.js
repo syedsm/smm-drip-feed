@@ -46,7 +46,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/orders
 router.post('/', async (req, res) => {
   try {
-    const { links, platform, templateId, customRules, panelId, viewsServiceId, likesServiceId, notes } = req.body;
+    const { links, platform, templateId, customRules, panelId, viewsServiceId, likesServiceId, notes, startDelay = 0 } = req.body;
 
     if (!links || !Array.isArray(links) || links.length === 0) {
       return res.status(400).json({ success: false, error: 'Array of links is required' });
@@ -69,12 +69,16 @@ router.post('/', async (req, res) => {
 
     const ordersToCreate = [];
 
+    // Calculate initial start time based on delay
+    const baseStartTime = new Date(Date.now() + (parseInt(startDelay) || 0) * 60000);
+
     // Process each link individually
     for (const link of links) {
       const cleanedLink = link.trim();
       if (!cleanedLink) continue;
 
-      const { totalViews, totalLikes, schedule } = generateSchedule(templateConfig, new Date());
+      // Pass baseStartTime to algorithm
+      const { totalViews, totalLikes, schedule } = generateSchedule(templateConfig, baseStartTime);
 
       ordersToCreate.push({
         socialLink: cleanedLink,
@@ -86,11 +90,12 @@ router.post('/', async (req, res) => {
         customRules: templateId ? undefined : customRules,
         totalViews,
         totalLikes,
-        totalTicks: schedule.length, // Just save how many it generated
+        totalTicks: schedule.length,
         schedule,
-        status: 'active', // Agenda will pick this up
-        nextDripAt: schedule[0]?.scheduledAt || new Date(),
-        startedAt: new Date(),
+        status: 'active',
+        nextDripAt: schedule[0]?.scheduledAt || baseStartTime,
+        startedAt: baseStartTime,
+        startDelay: parseInt(startDelay) || 0,
         notes: notes || '',
       });
     }

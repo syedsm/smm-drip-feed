@@ -72,7 +72,7 @@ function TemplateModal({ template, onClose, onSaved }) {
             </div>
             <hr className="divider" />
             <div className="form-group" style={{ marginBottom: 12 }}>
-              <label className="form-label" style={{ fontSize: 13, color: '#a78bfa' }}>Total Campaign Limit</label>
+              <label className="form-label" style={{ fontSize: 13, color: 'var(--purple)' }}>Total Campaign Limit</label>
               <div className="form-row">
                 <div className="form-group" style={{ flex: 1 }}>
                   <label className="form-label" style={{ fontSize: 11 }}>Max Views (Stop Condition)</label>
@@ -82,7 +82,7 @@ function TemplateModal({ template, onClose, onSaved }) {
             </div>
 
             <div className="form-group" style={{ marginBottom: 16 }}>
-              <label className="form-label" style={{ fontSize: 13, color: '#00d4ff' }}>Per-Cycle View Settings</label>
+              <label className="form-label" style={{ fontSize: 13, color: 'var(--cyan)' }}>Per-Cycle View Settings</label>
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: 11 }}>Min Views / Cycle</label>
@@ -96,7 +96,7 @@ function TemplateModal({ template, onClose, onSaved }) {
             </div>
 
             <div className="form-group" style={{ marginBottom: 16 }}>
-              <label className="form-label" style={{ fontSize: 13, color: '#34d399' }}>Systematic Likes Logic</label>
+              <label className="form-label" style={{ fontSize: 13, color: 'var(--green)' }}>Systematic Likes Logic</label>
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: 11 }}>Start @ Tick #</label>
@@ -195,18 +195,18 @@ export default function Templates() {
       ) : (
         <div className="grid grid-3">
           {templates.map(t => (
-            <div key={t._id} className="card">
+             <div key={t._id} className="card">
               <div className="card-body">
                 <div className="flex items-center justify-between mb-4">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(0,212,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Layers size={16} color="#00d4ff" />
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--cyan-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Layers size={16} color="var(--cyan)" />
                     </div>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 15 }}>{t.name}</div>
-                      {t.description && <div style={{ fontSize: 12, color: '#4a5568', marginTop: 2 }}>{t.description}</div>}
+                      {t.description && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{t.description}</div>}
                       {(t.viewsServiceId || t.likesServiceId) && (
-                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, display: 'flex', gap: 8 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4, display: 'flex', gap: 8 }}>
                           {t.viewsServiceId && <span>👁 Srv: {t.viewsServiceId}</span>}
                           {t.likesServiceId && <span>👍 Srv: {t.likesServiceId}</span>}
                         </div>
@@ -220,17 +220,17 @@ export default function Templates() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13 }}>
-                  <div style={{ background: 'rgba(167,139,250,0.08)', borderRadius: 8, padding: '8px 12px' }}>
-                    <span style={{ color: '#4a5568', display: 'block', fontSize: 11, marginBottom: 2 }}>TOTAL LIMIT</span>
-                    <span style={{ color: '#a78bfa', fontWeight: 700 }}>{t.maxViewsTotal?.toLocaleString()} v</span>
+                  <div className="border-purple" style={{ background: 'var(--purple-dim)', borderRadius: 8, padding: '8px 12px', border: '1px solid transparent' }}>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: 11, marginBottom: 2 }}>TOTAL LIMIT</span>
+                    <span style={{ color: 'var(--purple)', fontWeight: 700 }}>{t.maxViewsTotal?.toLocaleString()} v</span>
                   </div>
-                  <div style={{ background: 'rgba(0,212,255,0.08)', borderRadius: 8, padding: '8px 12px' }}>
-                    <span style={{ color: '#4a5568', display: 'block', fontSize: 11, marginBottom: 2 }}>VIEWS/CYCLE</span>
+                  <div className="border-cyan" style={{ background: 'var(--cyan-dim)', borderRadius: 8, padding: '8px 12px', border: '1px solid transparent' }}>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: 11, marginBottom: 2 }}>VIEWS/CYCLE</span>
                     <span className="text-cyan" style={{ fontWeight: 700 }}>{t.minViewsPerCycle?.toLocaleString()}–{t.maxViewsPerCycle?.toLocaleString()}</span>
                   </div>
-                  <div style={{ background: 'rgba(52,211,153,0.08)', borderRadius: 8, padding: '8px 12px', gridColumn: '1 / span 2' }}>
-                    <span style={{ color: '#4a5568', display: 'block', fontSize: 11, marginBottom: 2 }}>LIKES (ORGANIC)</span>
-                    <div style={{ color: '#34d399', fontWeight: 700 }}>
+                  <div className="border-green" style={{ background: 'var(--green-dim)', borderRadius: 8, padding: '8px 12px', gridColumn: '1 / span 2', border: '1px solid transparent' }}>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: 11, marginBottom: 2 }}>LIKES (ORGANIC)</span>
+                    <div style={{ color: 'var(--green)', fontWeight: 700 }}>
                       {t.totalHits > 0 ? (
                         <span>Hits: {t.totalHits} random ticks</span>
                       ) : (
@@ -239,13 +239,13 @@ export default function Templates() {
                       <span style={{ fontSize: 11, opacity: 0.8, marginLeft: 8 }}>• From Tick {t.likesStartTick}</span>
                     </div>
                   </div>
-                  <div style={{ background: 'rgba(251,191,36,0.08)', borderRadius: 8, padding: '8px 12px', gridColumn: '1 / span 2' }}>
-                    <span style={{ color: '#4a5568', display: 'block', fontSize: 11, marginBottom: 2 }}>GAP (MINS)</span>
-                    <span style={{ color: '#fbbf24', fontWeight: 700 }}>{t.minGapMins}–{t.maxGapMins}</span>
+                  <div className="border-yellow" style={{ background: 'var(--yellow-dim)', borderRadius: 8, padding: '8px 12px', gridColumn: '1 / span 2', border: '1px solid transparent' }}>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: 11, marginBottom: 2 }}>GAP (MINS)</span>
+                    <span style={{ color: 'var(--yellow)', fontWeight: 700 }}>{t.minGapMins}–{t.maxGapMins}</span>
                   </div>
                 </div>
 
-                <div style={{ marginTop: 12, fontSize: 11, color: '#4a5568' }}>
+                <div style={{ marginTop: 12, fontSize: 11, color: 'var(--text-muted)' }}>
                   Created {new Date(t.createdAt).toLocaleDateString()}
                 </div>
               </div>

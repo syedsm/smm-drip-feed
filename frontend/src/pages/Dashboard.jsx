@@ -1,29 +1,23 @@
 // src/pages/Dashboard.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, ThumbsUp, ShoppingBag, Layers, TrendingUp, ArrowRight } from 'lucide-react';
+import { Eye, ThumbsUp, ShoppingBag, Layers, TrendingUp, ArrowRight, Link as LinkIcon, Activity } from 'lucide-react';
 import { getStats } from '../services/api';
+import PlatformIcon from '../components/PlatformIcon';
 
 function StatCard({ label, value, sub, color, icon: Icon }) {
-  const colors = { cyan: '#00d4ff', green: '#34d399', purple: '#a78bfa', yellow: '#fbbf24' };
-  const dims = { cyan: 'rgba(0,212,255,0.12)', green: 'rgba(52,211,153,0.12)', purple: 'rgba(167,139,250,0.12)', yellow: 'rgba(251,191,36,0.12)' };
   return (
-    <div className="card stat-card">
-      <div className="stat-card-icon" style={{ background: dims[color] }}>
-        <Icon size={18} color={colors[color]} />
+    <div className={`card stat-card border-${color}`}>
+      <div className="stat-card-icon" style={{ background: `var(--${color}-dim)` }}>
+        <Icon size={18} style={{ color: `var(--${color})` }} />
       </div>
       <div className="stat-card-label">{label}</div>
-      <div className="stat-card-value" style={{ color: colors[color] }}>
+      <div className="stat-card-value" style={{ color: `var(--${color})` }}>
         {typeof value === 'number' ? value.toLocaleString() : value}
       </div>
       {sub && <div className="stat-card-sub">{sub}</div>}
     </div>
   );
-}
-
-function PlatformIcon({ platform }) {
-  const icons = { instagram: '📸', youtube: '▶️', tiktok: '🎵', twitter: '🐦', facebook: '📘', other: '🔗' };
-  return <span>{icons[platform] || '🔗'}</span>;
 }
 
 export default function Dashboard() {
@@ -82,36 +76,42 @@ export default function Dashboard() {
 
           {(!s.recentOrders || s.recentOrders.length === 0) ? (
             <div className="empty-state">
-              <div className="empty-state-icon">📭</div>
+              <div className="empty-state-icon"><ShoppingBag size={48} /></div>
               <div className="empty-state-title">No orders yet</div>
               <div className="empty-state-desc">Create your first drip-feed order to get started.</div>
             </div>
           ) : (
             <div className="table-wrapper">
-              <table>
+              <table className="responsive-table">
                 <thead>
                   <tr>
-                    <th>Platform</th>
-                    <th>Link</th>
+                    <th style={{ width: 40 }}><Activity size={12} /></th>
+                    <th><LinkIcon size={12} /> Link</th>
                     <th>Status</th>
-                    <th>Views</th>
-                    <th>Likes</th>
-                    <th></th>
+                    <th><Eye size={12} /> Views</th>
+                    <th><ThumbsUp size={12} /> Likes</th>
+                    <th style={{ width: 80 }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {s.recentOrders.map(order => (
                     <tr key={order._id}>
-                      <td><PlatformIcon platform={order.platform} /></td>
-                      <td><span className="truncate font-mono" title={order.socialLink}>{order.socialLink}</span></td>
-                      <td>
+                      <td data-label="Platform"><PlatformIcon platform={order.platform} size={14} /></td>
+                      <td data-label="Link">
+                        <span className="truncate font-mono" title={order.socialLink}>{order.socialLink}</span>
+                      </td>
+                      <td data-label="Status">
                         <span className={`badge badge-${order.status}`}>
-                          {order.status === 'running' && <span className="pulse-dot" />}
+                          {order.status === 'running' && <span className="pulse-dot" style={{ marginRight: 6 }} />}
                           {order.status}
                         </span>
                       </td>
-                      <td className="text-cyan">{order.deliveredViews?.toLocaleString()} / {order.totalViews?.toLocaleString()}</td>
-                      <td className="text-green">{order.deliveredLikes?.toLocaleString()} / {order.totalLikes?.toLocaleString()}</td>
+                      <td data-label="Views" className="text-cyan" style={{ fontWeight: 600 }}>
+                        {order.deliveredViews?.toLocaleString()} <span style={{ opacity: 0.5, fontSize: 11 }}>/ {order.totalViews?.toLocaleString()}</span>
+                      </td>
+                      <td data-label="Likes" className="text-green" style={{ fontWeight: 600 }}>
+                        {order.deliveredLikes?.toLocaleString()} <span style={{ opacity: 0.5, fontSize: 11 }}>/ {order.totalLikes?.toLocaleString()}</span>
+                      </td>
                       <td>
                         <Link to={`/orders/${order._id}`} className="btn btn-sm btn-secondary" style={{ textDecoration: 'none' }}>
                           View

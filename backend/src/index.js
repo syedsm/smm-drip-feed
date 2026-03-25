@@ -12,7 +12,8 @@ const statsRoutes = require('./routes/stats');
 const panelRoutes = require('./routes/panels');
 // no legacy scheduler
 
-const { startAgenda } = require('./config/agenda');
+const { defineJobs, startAgenda } = require('./config/agenda');
+const Order = require('./models/Order');
 
 const compression = require('compression');
 const http = require('http');
@@ -105,8 +106,35 @@ mongoose
   .then(async () => {
     console.log('[DB] Connected to MongoDB');
 
-    // Start Agenda jobs
-    await startAgenda(io);
+    // Define Agenda jobs but DO NOT start the job processor in Web Service
+    defineJobs(io);
+
+    // ─── MongoDB Change Streams for Real-time Socket.io Updates ──────────────────
+    // This allows the Web Service to emit progress updates even if the Worker 
+    // is the one updating the database.
+    const orderCollection = mongoose.connection.collection('orders');
+    const changeStream = orderCollection.watch();
+
+    changeStream.on('change', async (change) => {
+      if (change.operationType === 'update' || change.operationType === 'replace') {
+        const orderId = change.documentKey._id;
+        const updatedOrder = await Order.findById(orderId);
+        
+        if (updatedOrder) {
+          io.emit('order-update', {
+            orderId: updatedOrder._id,
+            delivered: updatedOrder.delivered,
+            deliveredViews: updatedOrder.deliveredViews,
+            deliveredLikes: updatedOrder.deliveredLikes,
+            status: updatedOrder.status,
+            nextDripAt: updatedOrder.nextDripAt
+          });
+          console.log(`[Socket] Emitted update for Order ${orderId}`);
+        }
+      }
+    });
+    console.log('[ChangeStream] Listening for Order updates...');
+    // ─────────────────────────────────────────────────────────────────────────────
 
     server.listen(PORT, () => {
       console.log(`[Server] SMM Drip-Feed API running on http://localhost:${PORT}`);
