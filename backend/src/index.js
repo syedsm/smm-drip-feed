@@ -22,6 +22,11 @@ const { Server } = require('socket.io');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+
+setInterval(() => {
+  console.log('[Keep-Alive] Internal tick to prevent idle shutdown...');
+}, 30000);
+
 // Trust Render's proxy for rate limiting to work correctly
 app.set('trust proxy', 1);
 
