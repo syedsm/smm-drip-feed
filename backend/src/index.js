@@ -22,6 +22,11 @@ const { Server } = require('socket.io');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+
+setInterval(() => {
+  console.log('[Keep-Alive] Internal tick to prevent idle shutdown...');
+}, 30000);
+
 // Trust Render's proxy for rate limiting to work correctly
 app.set('trust proxy', 1);
 
@@ -98,6 +103,7 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Database & Server Start ─────────────────────────────────────────────────
+// ─── Database & Server Start ─────────────────────────────────────────────────
 mongoose
   .connect(process.env.MONGODB_URI, {
     serverSelectionTimeoutMS: 5000,
@@ -105,21 +111,17 @@ mongoose
   })
   .then(async () => {
     console.log('[DB] Connected to MongoDB');
-
-    // Define Agenda jobs but DO NOT start the job processor in Web Service
+    
     defineJobs(io);
 
-    // ─── MongoDB Change Streams for Real-time Socket.io Updates ──────────────────
-    // This allows the Web Service to emit progress updates even if the Worker 
-    // is the one updating the database.
+    // Change Stream for Socket.io
     const orderCollection = mongoose.connection.collection('orders');
     const changeStream = orderCollection.watch();
-
     changeStream.on('change', async (change) => {
       if (change.operationType === 'update' || change.operationType === 'replace') {
         const orderId = change.documentKey._id;
         const updatedOrder = await Order.findById(orderId);
-        
+       
         if (updatedOrder) {
           io.emit('order-update', {
             orderId: updatedOrder._id,
@@ -134,10 +136,11 @@ mongoose
       }
     });
     console.log('[ChangeStream] Listening for Order updates...');
-    // ─────────────────────────────────────────────────────────────────────────────
 
+    // ✅ FIXED LISTEN BLOCK
     server.listen(PORT, () => {
-      console.log(`[Server] SMM Drip-Feed API running on http://localhost:${PORT}`);
+      console.log(`[Server] SMM Drip-Feed API running on port ${PORT}`);
+      console.log(`[Render] Backend is LIVE → https://${process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost'}`);
     });
   })
   .catch(err => {
