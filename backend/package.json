@@ -6,7 +6,6 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "worker": "node src/workers/agendaWorker.js",
     "test": "echo \"No tests configured\" && exit 0"
   },
   "keywords": [],

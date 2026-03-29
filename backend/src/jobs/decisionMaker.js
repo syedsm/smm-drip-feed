@@ -5,7 +5,7 @@ module.exports = (agenda) => {
   agenda.define('check-drip', async (job) => {
     console.log('[Agenda] Running check-drip...');
     const now = new Date();
-    
+
     // Find active orders that are due for a drip
     const activeOrders = await Order.find({
       status: 'active',

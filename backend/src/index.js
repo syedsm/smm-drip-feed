@@ -22,11 +22,6 @@ const { Server } = require('socket.io');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-
-setInterval(() => {
-  console.log('[Keep-Alive] Internal tick to prevent idle shutdown...');
-}, 30000);
-
 // Trust Render's proxy for rate limiting to work correctly
 app.set('trust proxy', 1);
 
@@ -54,13 +49,15 @@ app.use(cors({
   credentials: true,
 }));
 
-// Simple Request Logger
-if (process.env.NODE_ENV === 'production') {
-  app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
+// Request Logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
   });
-}
+  next();
+});
 
 // Rate limiting: 200 requests per 15 minutes per IP
 app.use('/api/', rateLimit({
@@ -81,9 +78,21 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/panels', panelRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
+// Health check / Stay-awake route
+app.get('/api/health', async (req, res) => {
+  try {
+    // Ping DB to keep connection active
+    await mongoose.connection.db.admin().ping();
+    res.json({ 
+      success: true, 
+      status: 'active', 
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString() 
+    });
+  } catch (err) {
+    console.error('[Health Check Error]', err.message);
+    res.status(500).json({ success: false, error: 'DB Offline' });
+  }
 });
 
 // Root route for Render/Deployment Health Checks
@@ -103,7 +112,6 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Database & Server Start ─────────────────────────────────────────────────
-// ─── Database & Server Start ─────────────────────────────────────────────────
 mongoose
   .connect(process.env.MONGODB_URI, {
     serverSelectionTimeoutMS: 5000,
@@ -111,17 +119,21 @@ mongoose
   })
   .then(async () => {
     console.log('[DB] Connected to MongoDB');
-    
-    defineJobs(io);
 
-    // Change Stream for Socket.io
+    // Start Agenda job processor in the same process
+    await startAgenda(io);
+
+    // ─── MongoDB Change Streams for Real-time Socket.io Updates ──────────────────
+    // This allows the Web Service to emit progress updates even if the Worker 
+    // is the one updating the database.
     const orderCollection = mongoose.connection.collection('orders');
     const changeStream = orderCollection.watch();
+
     changeStream.on('change', async (change) => {
       if (change.operationType === 'update' || change.operationType === 'replace') {
         const orderId = change.documentKey._id;
         const updatedOrder = await Order.findById(orderId);
-       
+        
         if (updatedOrder) {
           io.emit('order-update', {
             orderId: updatedOrder._id,
@@ -136,11 +148,10 @@ mongoose
       }
     });
     console.log('[ChangeStream] Listening for Order updates...');
+    // ─────────────────────────────────────────────────────────────────────────────
 
-    // ✅ FIXED LISTEN BLOCK
     server.listen(PORT, () => {
-      console.log(`[Server] SMM Drip-Feed API running on port ${PORT}`);
-      console.log(`[Render] Backend is LIVE → https://${process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost'}`);
+      console.log(`[Server] SMM Drip-Feed API running on http://localhost:${PORT}`);
     });
   })
   .catch(err => {
