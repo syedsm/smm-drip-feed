@@ -36,8 +36,7 @@ function generateSchedule(template, startDate = new Date()) {
   let effectiveMinViews = Math.max(minViewsPerCycle, 100); // Panel safety: min 100
   let effectiveMaxViews = Math.max(maxViewsPerCycle, effectiveMinViews);
 
-  // let cumulativeTime = startDate.getTime() + (1 * 60 * 1000); // Start 1 min from now
-  let cumulativeTime = startDate.getTime() + (60 * 60 * 1000); // Start 1 hour from now
+  let cumulativeTime = startDate.getTime() + (1 * 60 * 1000); // Start 1 min from now
 
   const schedule = [];
   let allocatedViews = 0;
