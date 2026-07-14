@@ -6,7 +6,12 @@ const Template = require('../models/Template');
 // GET /api/templates
 router.get('/', async (req, res) => {
   try {
-    const templates = await Template.find().sort({ createdAt: -1 });
+    const templates = await Template.find()
+      .populate('viewsPanel', 'name')
+      .populate('likesPanel', 'name')
+      .populate('commentsPanel', 'name')
+      .populate('sharesPanel', 'name')
+      .sort({ createdAt: -1 });
     res.json({ success: true, data: templates });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -16,7 +21,11 @@ router.get('/', async (req, res) => {
 // GET /api/templates/:id
 router.get('/:id', async (req, res) => {
   try {
-    const template = await Template.findById(req.params.id);
+    const template = await Template.findById(req.params.id)
+      .populate('viewsPanel', 'name')
+      .populate('likesPanel', 'name')
+      .populate('commentsPanel', 'name')
+      .populate('sharesPanel', 'name');
     if (!template) return res.status(404).json({ success: false, error: 'Template not found' });
     res.json({ success: true, data: template });
   } catch (err) {
@@ -27,21 +36,38 @@ router.get('/:id', async (req, res) => {
 // POST /api/templates
 router.post('/', async (req, res) => {
   try {
-    const { name, minViewsPerCycle, maxViewsPerCycle, maxViewsTotal, minLikesPerCycle, maxLikesPerCycle, minGapMins, maxGapMins, description, viewsServiceId, likesServiceId, likesStartTick, minTotalLikes, maxTotalLikes } = req.body;
+    const body = req.body;
 
     // Basic validation
-    if (!name || !minViewsPerCycle || !maxViewsPerCycle || !maxViewsTotal || minLikesPerCycle === undefined || maxLikesPerCycle === undefined) {
-      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    if (!body.name) {
+      return res.status(400).json({ success: false, error: 'Template name is required' });
     }
-    if (minViewsPerCycle > maxViewsPerCycle) return res.status(400).json({ success: false, error: 'minViewsPerCycle cannot be > maxViewsPerCycle' });
-    if (minLikesPerCycle > maxLikesPerCycle) return res.status(400).json({ success: false, error: 'minLikesPerCycle cannot be > maxLikesPerCycle' });
-    if (minGapMins > maxGapMins) return res.status(400).json({ success: false, error: 'minGapMins cannot be > maxGapMins' });
+    if (body.minViewsPerCycle && body.maxViewsPerCycle && parseInt(body.minViewsPerCycle) > parseInt(body.maxViewsPerCycle)) {
+      return res.status(400).json({ success: false, error: 'minViewsPerCycle cannot be > maxViewsPerCycle' });
+    }
+    if (body.minLikesPerCycle && body.maxLikesPerCycle && parseInt(body.minLikesPerCycle) > parseInt(body.maxLikesPerCycle)) {
+      return res.status(400).json({ success: false, error: 'minLikesPerCycle cannot be > maxLikesPerCycle' });
+    }
+    if (body.minGapMins && body.maxGapMins && parseInt(body.minGapMins) > parseInt(body.maxGapMins)) {
+      return res.status(400).json({ success: false, error: 'minGapMins cannot be > maxGapMins' });
+    }
+    if (body.enableComments && body.minCommentsPerCycle && body.maxCommentsPerCycle && parseInt(body.minCommentsPerCycle) > parseInt(body.maxCommentsPerCycle)) {
+      return res.status(400).json({ success: false, error: 'minCommentsPerCycle cannot be > maxCommentsPerCycle' });
+    }
+    if (body.enableShares && body.minSharesPerCycle && body.maxSharesPerCycle && parseInt(body.minSharesPerCycle) > parseInt(body.maxSharesPerCycle)) {
+      return res.status(400).json({ success: false, error: 'minSharesPerCycle cannot be > maxSharesPerCycle' });
+    }
 
-    const template = await Template.create({
-      name, minViewsPerCycle, maxViewsPerCycle, maxViewsTotal, minLikesPerCycle, maxLikesPerCycle, minGapMins, maxGapMins, description, viewsServiceId, likesServiceId, likesStartTick, minTotalLikes, maxTotalLikes
-    });
+    const template = await Template.create(body);
     
-    res.status(201).json({ success: true, data: template });
+    // Populate refs before returning
+    const populated = await Template.findById(template._id)
+      .populate('viewsPanel', 'name')
+      .populate('likesPanel', 'name')
+      .populate('commentsPanel', 'name')
+      .populate('sharesPanel', 'name');
+
+    res.status(201).json({ success: true, data: populated });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -50,18 +76,30 @@ router.post('/', async (req, res) => {
 // PUT /api/templates/:id
 router.put('/:id', async (req, res) => {
   try {
-    const { minViewsPerCycle, maxViewsPerCycle, maxViewsTotal, minLikesPerCycle, maxLikesPerCycle, minGapMins, maxGapMins, viewsServiceId, likesServiceId, likesStartTick, minTotalLikes, maxTotalLikes } = req.body;
+    const body = req.body;
 
-    if (minViewsPerCycle && maxViewsPerCycle && minViewsPerCycle > maxViewsPerCycle) {
+    if (body.minViewsPerCycle && body.maxViewsPerCycle && parseInt(body.minViewsPerCycle) > parseInt(body.maxViewsPerCycle)) {
       return res.status(400).json({ success: false, error: 'minViewsPerCycle cannot be > maxViewsPerCycle' });
     }
-    if (minLikesPerCycle !== undefined && maxLikesPerCycle !== undefined && minLikesPerCycle > maxLikesPerCycle) {
+    if (body.minLikesPerCycle !== undefined && body.maxLikesPerCycle !== undefined && parseInt(body.minLikesPerCycle) > parseInt(body.maxLikesPerCycle)) {
       return res.status(400).json({ success: false, error: 'minLikesPerCycle cannot be > maxLikesPerCycle' });
     }
-    if (minGapMins && maxGapMins && minGapMins > maxGapMins) {
+    if (body.minGapMins && body.maxGapMins && parseInt(body.minGapMins) > parseInt(body.maxGapMins)) {
       return res.status(400).json({ success: false, error: 'minGapMins cannot be > maxGapMins' });
     }
-    const template = await Template.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (body.enableComments && body.minCommentsPerCycle && body.maxCommentsPerCycle && parseInt(body.minCommentsPerCycle) > parseInt(body.maxCommentsPerCycle)) {
+      return res.status(400).json({ success: false, error: 'minCommentsPerCycle cannot be > maxCommentsPerCycle' });
+    }
+    if (body.enableShares && body.minSharesPerCycle && body.maxSharesPerCycle && parseInt(body.minSharesPerCycle) > parseInt(body.maxSharesPerCycle)) {
+      return res.status(400).json({ success: false, error: 'minSharesPerCycle cannot be > maxSharesPerCycle' });
+    }
+
+    const template = await Template.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true })
+      .populate('viewsPanel', 'name')
+      .populate('likesPanel', 'name')
+      .populate('commentsPanel', 'name')
+      .populate('sharesPanel', 'name');
+
     if (!template) return res.status(404).json({ success: false, error: 'Template not found' });
     res.json({ success: true, data: template });
   } catch (err) {

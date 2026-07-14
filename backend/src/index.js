@@ -14,6 +14,8 @@ const panelRoutes = require('./routes/panels');
 
 const { defineJobs, startAgenda } = require('./config/agenda');
 const Order = require('./models/Order');
+const Template = require('./models/Template');
+const Panel = require('./models/Panel');
 
 const compression = require('compression');
 const http = require('http');
@@ -111,6 +113,165 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ success: false, error: err.message || 'Internal server error' });
 });
 
+async function seedDefaultTemplates() {
+  try {
+    // Fetch default panel
+    const panels = await Panel.find({ isActive: true });
+    const defaultPanel = panels.find(p => p.isDefault) || panels[0] || null;
+    const defaultPanelId = defaultPanel ? defaultPanel._id : null;
+    
+    const presets = [
+      {
+        name: 'Starter Template Default',
+        description: 'First payout target template. Drip targets 1K-5K views with 20-25 engagements (likes). Decoupled triggers prevent bot flagging.',
+        category: 'Starter',
+        growthType: 'Balanced',
+        viewsPanel: defaultPanelId,
+        likesPanel: defaultPanelId,
+        viewsServiceId: '1001',
+        likesServiceId: '1002',
+        minViewsPerCycle: 100,
+        maxViewsPerCycle: 250,
+        maxViewsTotal: 5000,
+        viewsRandomizationPct: 10,
+        accelerationCurve: 'Balanced',
+        likesStartTick: 3,
+        minLikesPerCycle: 2,
+        maxLikesPerCycle: 5,
+        likesTotalHits: 25,
+        likesDelayMins: 5,
+        minGapMins: 45,
+        maxGapMins: 90,
+      },
+      {
+        name: 'Growth Template Default',
+        description: 'Mid-stage scaling (5K-25K Views) with comment delays for natural growth engagement signature.',
+        category: 'Growth',
+        growthType: 'Balanced',
+        viewsPanel: defaultPanelId,
+        likesPanel: defaultPanelId,
+        viewsServiceId: '1001',
+        likesServiceId: '1002',
+        minViewsPerCycle: 300,
+        maxViewsPerCycle: 800,
+        maxViewsTotal: 25000,
+        viewsRandomizationPct: 15,
+        accelerationCurve: 'Balanced',
+        likesStartTick: 3,
+        minLikesPerCycle: 10,
+        maxLikesPerCycle: 30,
+        likesTotalHits: 200,
+        likesDelayMins: 10,
+        enableComments: true,
+        commentsStartTick: 4,
+        minCommentsPerCycle: 1,
+        maxCommentsPerCycle: 3,
+        commentsDelayMins: 15,
+        minGapMins: 30,
+        maxGapMins: 90,
+      },
+      {
+        name: 'Momentum Template Default',
+        description: 'Heavy distribution targeting 25K-100K views.',
+        category: 'Momentum',
+        growthType: 'Balanced',
+        viewsPanel: defaultPanelId,
+        likesPanel: defaultPanelId,
+        viewsServiceId: '1001',
+        likesServiceId: '1002',
+        minViewsPerCycle: 1000,
+        maxViewsPerCycle: 3000,
+        maxViewsTotal: 100000,
+        viewsRandomizationPct: 15,
+        accelerationCurve: 'Balanced',
+        likesStartTick: 3,
+        minLikesPerCycle: 30,
+        maxLikesPerCycle: 80,
+        likesTotalHits: 1000,
+        likesDelayMins: 20,
+        enableComments: true,
+        commentsStartTick: 4,
+        minCommentsPerCycle: 2,
+        maxCommentsPerCycle: 5,
+        commentsDelayMins: 30,
+        minGapMins: 20,
+        maxGapMins: 60,
+      },
+      {
+        name: 'Viral Template Default',
+        description: 'High velocity viral boost targeting up to 500K views.',
+        category: 'Viral',
+        growthType: 'Aggressive',
+        viewsPanel: defaultPanelId,
+        likesPanel: defaultPanelId,
+        viewsServiceId: '1001',
+        likesServiceId: '1002',
+        minViewsPerCycle: 3000,
+        maxViewsPerCycle: 10000,
+        maxViewsTotal: 500000,
+        viewsRandomizationPct: 20,
+        accelerationCurve: 'Balanced',
+        likesStartTick: 2,
+        minLikesPerCycle: 100,
+        maxLikesPerCycle: 300,
+        likesTotalHits: 5000,
+        likesDelayMins: 15,
+        enableComments: true,
+        commentsStartTick: 3,
+        minCommentsPerCycle: 5,
+        maxCommentsPerCycle: 15,
+        commentsDelayMins: 20,
+        minGapMins: 10,
+        maxGapMins: 30,
+      },
+      {
+        name: 'Elite Template Default',
+        description: 'Elite scaling targeting up to 1,000,000 (1M) maximum views.',
+        category: 'Elite',
+        growthType: 'Aggressive',
+        viewsPanel: defaultPanelId,
+        likesPanel: defaultPanelId,
+        viewsServiceId: '1001',
+        likesServiceId: '1002',
+        minViewsPerCycle: 10000,
+        maxViewsPerCycle: 35000,
+        maxViewsTotal: 1000000,
+        viewsRandomizationPct: 20,
+        accelerationCurve: 'Balanced',
+        likesStartTick: 2,
+        minLikesPerCycle: 500,
+        maxLikesPerCycle: 1500,
+        likesTotalHits: 15000,
+        likesDelayMins: 15,
+        enableComments: true,
+        commentsStartTick: 3,
+        minCommentsPerCycle: 10,
+        maxCommentsPerCycle: 30,
+        commentsDelayMins: 20,
+        minGapMins: 5,
+        maxGapMins: 15,
+      }
+    ];
+
+    let seedCount = 0;
+    for (const preset of presets) {
+      const exists = await Template.findOne({ name: preset.name });
+      if (!exists) {
+        await Template.create(preset);
+        seedCount++;
+      }
+    }
+    
+    if (seedCount > 0) {
+      console.log(`[Seeder] Seeded ${seedCount} default progression templates successfully!`);
+    } else {
+      console.log('[Seeder] All default templates already exist in database.');
+    }
+  } catch (err) {
+    console.error('[Seeder] Error seeding templates:', err.message);
+  }
+}
+
 // ─── Database & Server Start ─────────────────────────────────────────────────
 mongoose
   .connect(process.env.MONGODB_URI, {
@@ -119,6 +280,9 @@ mongoose
   })
   .then(async () => {
     console.log('[DB] Connected to MongoDB');
+
+    // Seed default presets templates
+    await seedDefaultTemplates();
 
     // Start Agenda job processor in the same process
     await startAgenda(io);

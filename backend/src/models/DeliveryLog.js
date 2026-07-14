@@ -7,6 +7,8 @@ const deliveryLogSchema = new mongoose.Schema(
     tick: { type: Number, required: true },
     views: { type: Number, required: true },
     likes: { type: Number, required: true },
+    comments: { type: Number, default: 0 },
+    shares: { type: Number, default: 0 },
     viewsApiResponse: { type: mongoose.Schema.Types.Mixed, default: null },
     likesApiResponse: { type: mongoose.Schema.Types.Mixed, default: null },
     success: { type: Boolean, default: true },

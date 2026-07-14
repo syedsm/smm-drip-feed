@@ -31,7 +31,7 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      {/* Sidebar */}
+      {/* Sidebar / Header */}
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-logo">
@@ -42,7 +42,7 @@ export default function App() {
             </div>
           </div>
           
-          <div className="flex gap-2 items-center" style={{ marginTop: 12 }}>
+          <div className="sidebar-utility">
             <button className="btn btn-sm btn-secondary" onClick={toggleTheme} style={{ padding: 8 }} title="Toggle Theme">
               {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
             </button>
@@ -71,6 +71,11 @@ export default function App() {
           ))}
         </div>
       </aside>
+
+      {/* Backdrop overlay for mobile menu drawer */}
+      {mobileMenuOpen && (
+        <div className="menu-backdrop mobile-only" onClick={() => setMobileMenuOpen(false)} />
+      )}
 
       {/* Main */}
       <main className="main-content">

@@ -13,6 +13,7 @@ export const getPanel = (id) => api.get(`/panels/${id}`).then(r => r.data);
 export const createPanel = (data) => api.post('/panels', data).then(r => r.data);
 export const updatePanel = (id, data) => api.put(`/panels/${id}`, data).then(r => r.data);
 export const deletePanel = (id) => api.delete(`/panels/${id}`).then(r => r.data);
+export const getPanelServices = (id) => api.get(`/panels/${id}/services`).then(r => r.data);
 
 // ─── Templates ────────────────────────────────────────────────────────────────
 export const getTemplates = () => api.get('/templates').then(r => r.data);

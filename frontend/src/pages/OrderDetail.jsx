@@ -5,9 +5,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar,
 } from 'recharts';
-import { Pause, Play, ArrowLeft, Download, RefreshCw, Clock, Eye, ThumbsUp, Zap, Activity, Link as LinkIcon } from 'lucide-react';
+import { Pause, Play, ArrowLeft, Download, RefreshCw, Clock, Eye, ThumbsUp, Zap, Activity, Link as LinkIcon, MessageSquare, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getOrder, getOrderReport, deleteOrder, updateOrderStatus } from '../services/api';
+import { getOrder, getOrderReport, deleteOrder, updateOrderStatus, getTemplates } from '../services/api';
 import PlatformIcon from '../components/PlatformIcon';
 
 function CustomTooltip({ active, payload, label }) {
@@ -54,6 +54,7 @@ export default function OrderDetail() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [templates, setTemplates] = useState([]);
 
   const load = useCallback(async () => {
     try {
@@ -66,11 +67,15 @@ export default function OrderDetail() {
 
   useEffect(() => {
     load();
-    const t = setInterval(() => { 
-      if (['running', 'pending', 'active'].includes(order?.status)) load(); 
+    const t = setInterval(() => {
+      if (['running', 'pending', 'active'].includes(order?.status)) load();
     }, 15000);
     return () => clearInterval(t);
   }, [load, order?.status]);
+
+  useEffect(() => {
+    getTemplates().then(res => setTemplates(res.data)).catch(() => {});
+  }, []);
 
   function handleRefresh() { setRefreshing(true); load(); }
 
@@ -79,14 +84,14 @@ export default function OrderDetail() {
     try { await deleteOrder(id); toast.success('Order deleted'); navigate('/orders'); }
     catch { toast.error('Failed to delete'); }
   }
-  
+
   async function handleTogglePause() {
     if (!order) return;
     const newStatus = order.status === 'paused' ? 'active' : 'paused';
-    try { 
-      await updateOrderStatus(order._id, newStatus); 
-      toast.success(`Order ${newStatus === 'active' ? 'Resumed' : 'Paused'}`); 
-      load(); 
+    try {
+      await updateOrderStatus(order._id, newStatus);
+      toast.success(`Order ${newStatus === 'active' ? 'Resumed' : 'Paused'}`);
+      load();
     } catch { toast.error('Failed to update status'); }
   }
 
@@ -132,6 +137,15 @@ export default function OrderDetail() {
     ? ((order.deliveredLikes / order.deliveredViews) * 100).toFixed(1)
     : '0.0';
 
+  const CATEGORY_PROGRESSION = {
+    'Starter': 'Growth',
+    'Growth': 'Momentum',
+    'Momentum': 'Viral',
+    'Viral': 'Elite'
+  };
+  const nextCategory = order && order.template ? CATEGORY_PROGRESSION[order.template.category] : null;
+  const nextTemplate = nextCategory ? templates.find(t => t.category === nextCategory) : null;
+
   return (
     <div>
       {/* Header */}
@@ -151,10 +165,10 @@ export default function OrderDetail() {
               <LinkIcon size={12} style={{ marginRight: 4 }} /> {order.socialLink}
             </p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
-              <Zap size={10} style={{ display: 'inline', marginRight: 2 }} /> Views Service ID: {order.viewsServiceId || 'N/A'} &nbsp;|&nbsp; 
+              <Zap size={10} style={{ display: 'inline', marginRight: 2 }} /> Views Service ID: {order.viewsServiceId || 'N/A'} &nbsp;|&nbsp;
               <ThumbsUp size={10} style={{ display: 'inline', marginLeft: 6, marginRight: 2 }} /> Likes Service ID: {order.likesServiceId || 'N/A'}
             </p>
-            
+
             {['pending', 'running'].includes(order.status) && (() => {
               const nextSlot = order.schedule?.find(s => !s.delivered);
               return nextSlot ? (
@@ -166,7 +180,7 @@ export default function OrderDetail() {
                 </div>
               ) : null;
             })()}
-            
+
           </div>
           <div className="flex gap-2">
             {['active', 'running', 'paused'].includes(order.status) && (
@@ -186,22 +200,60 @@ export default function OrderDetail() {
         </div>
       </div>
 
+      {/* Next Stage Campaign Promotion Suggestion Box */}
+      {order.status === 'completed' && nextTemplate && (
+        <div className="card" style={{ marginBottom: 20, border: '1.5px dashed var(--green)', background: 'var(--green-dim)' }}>
+          <div className="card-body flex justify-between items-center" style={{ padding: '16px 20px', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 260 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                🚀 Campaign Completed — Next Stage Ready!
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+                To grow naturally to 5k–10k+ views with a <strong>0 bot detector score</strong>, promote this target to the <strong>{nextCategory} Stage</strong>.
+              </p>
+              <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12, flexWrap: 'wrap' }}>
+                <span className="text-secondary">📈 <strong>Drip Views</strong>: {nextTemplate.minViewsPerCycle}-{nextTemplate.maxViewsPerCycle} per cycle (up to {nextTemplate.maxViewsTotal?.toLocaleString()} views total)</span>
+                <span className="text-secondary">👍 <strong>Likes Delay</strong>: shifts to cycle {nextTemplate.likesStartTick} to ensure natural growth sig</span>
+              </div>
+            </div>
+            <Link 
+              to={`/orders?link=${encodeURIComponent(order.socialLink)}&template=${nextTemplate._id}`} 
+              className="btn btn-primary"
+              style={{ textDecoration: 'none' }}
+            >
+              Promote to {nextCategory}
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Summary Cards */}
-      <div className="grid grid-4" style={{ marginBottom: 24 }}>
-        {[
-          { label: 'Bot Tracker', value: `${pct}%`, sub: order.botStatus || 'Initializing...', color: 'cyan', icon: Zap },
+      {(() => {
+        const summaryCards = [
           { label: 'Views Delivered', value: order.deliveredViews.toLocaleString(), sub: `of ${order.totalViews.toLocaleString()}`, color: 'purple', icon: Eye },
           { label: 'Likes Delivered', value: order.deliveredLikes.toLocaleString(), sub: `of ${order.totalLikes.toLocaleString()}`, color: 'green', icon: ThumbsUp },
-          { label: 'Likes/Views Ratio', value: `${likesViewsRatio}%`, sub: 'Overall Campaign Avg', color: 'yellow', icon: Clock },
-        ].map(({ label, value, sub, color, icon: Icon }) => (
-          <div key={label} className={`card stat-card border-${color}`}>
-            <div className="stat-card-icon" style={{ background: `var(--${color}-dim)` }}><Icon size={16} style={{ color: `var(--${color})` }} /></div>
-            <div className="stat-card-label">{label}</div>
-            <div className="stat-card-value" style={{ color: `var(--${color})` }}>{value}</div>
-            <div className="stat-card-sub">{sub}</div>
+        ];
+        if (order.commentsServiceId) {
+          summaryCards.push({ label: 'Comments Delivered', value: (order.deliveredComments || 0).toLocaleString(), sub: `of ${(order.totalComments || 0).toLocaleString()}`, color: 'cyan', icon: MessageSquare });
+        }
+        if (order.sharesServiceId) {
+          summaryCards.push({ label: 'Shares Delivered', value: (order.deliveredShares || 0).toLocaleString(), sub: `of ${(order.totalShares || 0).toLocaleString()}`, color: 'yellow', icon: Share2 });
+        }
+        summaryCards.push({ label: 'Likes/Views Ratio', value: `${likesViewsRatio}%`, sub: 'Overall Campaign Avg', color: 'purple', icon: Clock });
+
+        return (
+          <div className={`grid grid-${summaryCards.length > 3 ? 4 : 3}`} style={{ marginBottom: 24 }}>
+            {summaryCards.map(({ label, value, sub, color, icon: Icon }) => (
+              <div key={label} className={`card stat-card border-${color}`}>
+                <div className="stat-card-icon" style={{ background: `var(--${color}-dim)` }}><Icon size={16} style={{ color: `var(--${color})` }} /></div>
+                <div className="stat-card-label">{label}</div>
+                <div className="stat-card-value" style={{ color: `var(--${color})` }}>{value}</div>
+                <div className="stat-card-sub">{sub}</div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       {/* Overall Progress Bar */}
       <div className="card" style={{ marginBottom: 20 }}>
@@ -269,6 +321,8 @@ export default function OrderDetail() {
                     <th>Tick</th>
                     <th>Views</th>
                     <th>Likes</th>
+                    {order.commentsServiceId && <th>Comments</th>}
+                    {order.sharesServiceId && <th>Shares</th>}
                     <th>Status</th>
                     <th>Delivered At</th>
                   </tr>
@@ -279,12 +333,14 @@ export default function OrderDetail() {
                       <td data-label="Tick"><span style={{ fontWeight: 700 }}>#{log.tick}</span></td>
                       <td data-label="Views" className="text-cyan">{log.views.toLocaleString()}</td>
                       <td data-label="Likes" className="text-green">{log.likes.toLocaleString()}</td>
+                      {order.commentsServiceId && <td data-label="Comments" className="text-cyan">{(log.comments || 0).toLocaleString()}</td>}
+                      {order.sharesServiceId && <td data-label="Shares" className="text-yellow">{(log.shares || 0).toLocaleString()}</td>}
                       <td data-label="Status">
                         {log.success
                           ? <span className="badge badge-completed" style={{ background: 'rgba(52,211,153,0.1)', color: '#34d399' }}>✓ OK</span>
                           : <span className="badge badge-failed" title={log.errorMessage} style={{ background: 'rgba(248,113,113,0.1)', color: '#f87171' }}>✗ {log.errorMessage || 'Error'}</span>}
                       </td>
-                      <td data-label="Delivered At" style={{ color: '#4a5568', fontSize: 12 }}>{new Date(log.deliveredAt).toLocaleString()}</td>
+                      <td data-label="Delivered At" style={{ color: 'var(--text-muted)', fontSize: 12 }}>{new Date(log.deliveredAt).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>

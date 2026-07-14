@@ -1,7 +1,7 @@
 // src/pages/Orders.jsx
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, ArrowRight, Trash2, Pause, Play, Settings2, FileText, Server, Clock, ShoppingBag, Eye, ThumbsUp, Layers, Link as LinkIcon } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Plus, ArrowRight, Trash2, Pause, Play, Settings2, FileText, Server, Clock, ShoppingBag, Eye, ThumbsUp, Layers, Link as LinkIcon, MessageSquare, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getOrders, createOrder, deleteOrder, updateOrderStatus, getTemplates, getPanels } from '../services/api';
 import PlatformIcon from '../components/PlatformIcon';
@@ -31,7 +31,7 @@ function Countdown({ targetDate }) {
   );
 }
 
-function CreateOrderModal({ onClose, onCreated }) {
+function CreateOrderModal({ onClose, onCreated, initialLink = '', initialTemplateId = '' }) {
   const [templates, setTemplates] = useState([]);
   const [panels, setPanels] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -40,7 +40,7 @@ function CreateOrderModal({ onClose, onCreated }) {
 
   const [form, setForm] = useState({
     linksText: '',
-    singleLink: '',
+    singleLink: initialLink,
     platform: 'instagram',
     panelId: '',
     templateId: '',
@@ -55,9 +55,23 @@ function CreateOrderModal({ onClose, onCreated }) {
       setPanels(activePanels);
       
       const defaultPanel = activePanels.find(x => x.isDefault) || activePanels[0];
-      if (defaultPanel) setForm(f => ({ ...f, panelId: defaultPanel._id }));
+      setForm(f => ({ 
+        ...f, 
+        panelId: f.panelId || (defaultPanel ? defaultPanel._id : ''),
+        templateId: f.templateId || initialTemplateId
+      }));
     }).catch(() => toast.error('Failed to load form data'));
-  }, []);
+  }, [initialTemplateId]);
+
+  useEffect(() => {
+    if (initialLink || initialTemplateId) {
+      setForm(f => ({
+        ...f,
+        singleLink: initialLink || f.singleLink,
+        templateId: initialTemplateId || f.templateId
+      }));
+    }
+  }, [initialLink, initialTemplateId]);
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
   const setCustom = (k) => (e) => setForm(f => ({ ...f, customRules: { ...f.customRules, [k]: parseFloat(e.target.value) } }));
@@ -158,7 +172,7 @@ function CreateOrderModal({ onClose, onCreated }) {
                     <option value="">— Select a template —</option>
                     {templates.map(t => (
                       <option key={t._id} value={t._id}>
-                        {t.name} (Max: {t.maxViewsTotal?.toLocaleString()}v | {t.minLikesPerCycle}-{t.maxLikesPerCycle} Likes/cyc | Tick {t.likesStartTick}-{t.likesEndTick})
+                        {t.name} (Max: {t.maxViewsTotal?.toLocaleString()} views | {t.minLikesPerCycle}-{t.maxLikesPerCycle} Likes/cyc | Tick {t.likesStartTick}-{t.likesEndTick})
                       </option>
                     ))}
                   </select>
@@ -206,13 +220,25 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [filter, setFilter] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [templates, setTemplates] = useState([]);
+
+  const searchLink = searchParams.get('link') || '';
+  const searchTemplate = searchParams.get('template') || '';
+
+  useEffect(() => {
+    if (searchLink || searchTemplate) {
+      setShowCreate(true);
+    }
+  }, [searchLink, searchTemplate]);
 
   async function load() {
     setLoading(true);
     try {
       const params = filter ? { status: filter } : {};
-      const r = await getOrders(params);
-      setOrders(r.data);
+      const [ordRes, tempRes] = await Promise.all([getOrders(params), getTemplates()]);
+      setOrders(ordRes.data);
+      setTemplates(tempRes.data);
     } catch { toast.error('Failed to load orders'); }
     finally { setLoading(false); }
   }
@@ -298,10 +324,21 @@ export default function Orders() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {orders.map(order => {
             const pct = progressPct(order);
+            
+            const CATEGORY_PROGRESSION = {
+              'Starter': 'Growth',
+              'Growth': 'Momentum',
+              'Momentum': 'Viral',
+              'Viral': 'Elite'
+            };
+            const currentCategory = order.template?.category || (order.template && typeof order.template === 'object' ? order.template.category : null);
+            const nextCategory = currentCategory ? CATEGORY_PROGRESSION[currentCategory] : null;
+            const nextTemplate = nextCategory ? templates.find(t => t.category === nextCategory) : null;
+
             return (
               <div key={order._id} className="card">
                 <div className="card-body">
-                  <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
+                  <div className="order-card-header" style={{ marginBottom: 14 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
                         <span className={`badge badge-${order.status}`}>
@@ -329,6 +366,16 @@ export default function Orders() {
 
                     </div>
                     <div className="flex gap-2">
+                      {order.status === 'completed' && nextTemplate && (
+                        <Link 
+                          to={`/orders?link=${encodeURIComponent(order.socialLink)}&template=${nextTemplate._id}`} 
+                          className="btn btn-sm btn-primary flex items-center gap-1"
+                          style={{ textDecoration: 'none', background: 'var(--green)', borderColor: 'var(--green)' }}
+                          title={`Promote to ${nextCategory}`}
+                        >
+                          <Plus size={12} /> Next Phase
+                        </Link>
+                      )}
                       {['active', 'running', 'paused'].includes(order.status) && (
                         <button className="btn btn-sm btn-secondary" title={order.status === 'paused' ? 'Resume' : 'Pause'} onClick={() => handleTogglePause(order)}>
                           {order.status === 'paused' ? <Play size={12} color="#10b981" /> : <Pause size={12} color="#f59e0b" />}
@@ -351,9 +398,15 @@ export default function Orders() {
                     <div className="progress-bar">
                       <div className="progress-fill" style={{ width: `${pct}%` }} />
                     </div>
-                    <div className="progress-label">
-                      <span className="text-cyan"><Eye size={12} /> {order.deliveredViews?.toLocaleString()}</span>
-                      <span className="text-green"><ThumbsUp size={12} /> {order.deliveredLikes?.toLocaleString()}</span>
+                    <div className="progress-label" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                      <span className="text-cyan" style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Eye size={12} /> {order.deliveredViews?.toLocaleString()} / {order.totalViews?.toLocaleString()}</span>
+                      <span className="text-green" style={{ display: 'flex', alignItems: 'center', gap: 4 }}><ThumbsUp size={12} /> {order.deliveredLikes?.toLocaleString()} / {order.totalLikes?.toLocaleString()}</span>
+                      {order.commentsServiceId && (
+                        <span className="text-cyan" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--cyan)' }}><MessageSquare size={12} /> {order.deliveredComments?.toLocaleString()} / {order.totalComments?.toLocaleString()}</span>
+                      )}
+                      {order.sharesServiceId && (
+                        <span className="text-yellow" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--yellow)' }}><Share2 size={12} /> {order.deliveredShares?.toLocaleString()} / {order.totalShares?.toLocaleString()}</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -364,7 +417,19 @@ export default function Orders() {
       )}
 
       {showCreate && (
-        <CreateOrderModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />
+        <CreateOrderModal 
+          initialLink={searchLink}
+          initialTemplateId={searchTemplate}
+          onClose={() => {
+            setShowCreate(false);
+            setSearchParams({});
+          }} 
+          onCreated={() => { 
+            setShowCreate(false); 
+            setSearchParams({});
+            load(); 
+          }} 
+        />
       )}
     </div>
   );

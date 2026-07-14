@@ -29,7 +29,16 @@ function generateSchedule(template, startDate = new Date()) {
     minGapMins, maxGapMins,
     likesStartTick = 1,
     minLikesPerCycle = 0, maxLikesPerCycle = 0,
-    totalLikes = 0
+    totalLikes = 0,
+    enableComments = false,
+    minCommentsPerCycle = 0,
+    maxCommentsPerCycle = 0,
+    commentsStartTick = 1,
+    enableShares = false,
+    minSharesPerCycle = 0,
+    maxSharesPerCycle = 0,
+    sharesStartTick = 1,
+    totalHits = 0
   } = template;
 
   // 1. Strict Range Settings: strictly follow user inputs with a 100-view panel floor
@@ -57,6 +66,8 @@ function generateSchedule(template, startDate = new Date()) {
       scheduledAt: new Date(cumulativeTime),
       views: cycleViews,
       likes: 0,
+      comments: 0,
+      shares: 0,
       delivered: false,
       smmOrderId: null,
       error: null,
@@ -78,7 +89,6 @@ function generateSchedule(template, startDate = new Date()) {
   }
 
   // Second pass: Distribute likes randomly across ticks (Organic Delivery)
-  const { totalHits = 0 } = template;
   let targetTotalLikes = totalLikes || 0;
   const eligibleSlots = schedule.filter(s => s.tick >= likesStartTick);
   
@@ -92,14 +102,13 @@ function generateSchedule(template, startDate = new Date()) {
         .sort((a, b) => a.tick - b.tick);
 
       for (const slot of activeSlots) {
-        // Enforce min 10 likes per hit as requested
-        const hitMin = Math.max(minLikesPerCycle, 10);
+        const hitMin = Math.max(minLikesPerCycle, 0);
         const hitMax = Math.max(maxLikesPerCycle, hitMin);
         slot.likes = randInt(hitMin, hitMax);
       }
     } else if (targetTotalLikes > 0) {
       // 2. Legacy Target-Based Mode (Backwards compatibility)
-      const maxPossibleTicks = Math.floor(targetTotalLikes / 10);
+      const maxPossibleTicks = Math.floor(targetTotalLikes / Math.max(minLikesPerCycle, 1));
       const desiredTicks = Math.max(1, Math.floor(eligibleSlots.length * (randInt(50, 80) / 100)));
       const activeTickCount = Math.min(desiredTicks, maxPossibleTicks);
       
@@ -115,8 +124,8 @@ function generateSchedule(template, startDate = new Date()) {
           slot.likes = remainingLikes;
         } else {
           let share = Math.floor(remainingLikes / (activeSlots.length - i));
-          let minForThisHit = Math.max(minLikesPerCycle, 10);
-          let maxForThisHit = remainingLikes - (activeSlots.length - i - 1) * 10;
+          let minForThisHit = Math.max(minLikesPerCycle, 0);
+          let maxForThisHit = remainingLikes - (activeSlots.length - i - 1) * Math.max(minLikesPerCycle, 0);
           let cycleLikes = randInt(minForThisHit, Math.min(maxForThisHit, Math.floor(share * 1.5)));
           slot.likes = cycleLikes;
           remainingLikes -= cycleLikes;
@@ -132,13 +141,52 @@ function generateSchedule(template, startDate = new Date()) {
         .sort((a, b) => a.tick - b.tick);
 
       for (const slot of activeSlots) {
-        slot.likes = randInt(Math.max(minLikesPerCycle, 10), maxLikesPerCycle);
+        slot.likes = randInt(Math.max(minLikesPerCycle, 0), maxLikesPerCycle);
+      }
+    }
+  }
+
+  // Third pass: Distribute comments (Simultaneous Delivery alongside views on random ticks)
+  if (enableComments && minCommentsPerCycle > 0) {
+    const commentsEligible = schedule.filter(s => s.tick >= commentsStartTick);
+    if (commentsEligible.length > 0) {
+      const commentsRatio = randInt(30, 60) / 100;
+      const commentsTickCount = Math.max(1, Math.floor(commentsEligible.length * commentsRatio));
+      const commentsSlots = [...commentsEligible]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, commentsTickCount);
+      for (const slot of commentsSlots) {
+        slot.comments = randInt(minCommentsPerCycle, maxCommentsPerCycle);
+      }
+    }
+  }
+
+  // Fourth pass: Distribute shares (Simultaneous Delivery alongside views on random ticks)
+  if (enableShares && minSharesPerCycle > 0) {
+    const sharesEligible = schedule.filter(s => s.tick >= sharesStartTick);
+    if (sharesEligible.length > 0) {
+      const sharesRatio = randInt(20, 50) / 100;
+      const sharesTickCount = Math.max(1, Math.floor(sharesEligible.length * sharesRatio));
+      const sharesSlots = [...sharesEligible]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, sharesTickCount);
+      for (const slot of sharesSlots) {
+        slot.shares = randInt(minSharesPerCycle, maxSharesPerCycle);
       }
     }
   }
 
   const finalTotalLikes = schedule.reduce((sum, s) => sum + s.likes, 0);
-  return { totalViews: allocatedViews, totalLikes: finalTotalLikes, schedule };
+  const finalTotalComments = schedule.reduce((sum, s) => sum + s.comments, 0);
+  const finalTotalShares = schedule.reduce((sum, s) => sum + s.shares, 0);
+
+  return { 
+    totalViews: allocatedViews, 
+    totalLikes: finalTotalLikes, 
+    totalComments: finalTotalComments,
+    totalShares: finalTotalShares,
+    schedule 
+  };
 }
 
 module.exports = { generateSchedule, randInt };

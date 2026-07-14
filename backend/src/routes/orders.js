@@ -60,12 +60,30 @@ router.post('/', async (req, res) => {
     // Explicitly use service IDs from the template
     const actualViewsServiceId = template.viewsServiceId;
     const actualLikesServiceId = template.likesServiceId;
+    const actualCommentsServiceId = template.enableComments ? template.commentsServiceId : null;
+    const actualSharesServiceId = template.enableShares ? template.sharesServiceId : null;
 
-    if (!actualViewsServiceId || !actualLikesServiceId) {
-      return res.status(400).json({ success: false, error: 'The selected template is missing Service IDs. Please update the template first.' });
+    if (!actualViewsServiceId) {
+      return res.status(400).json({ success: false, error: 'The selected template is missing Views Service ID. Please update the template first.' });
     }
 
-    const templateConfig = template;
+    if (template.enableComments && !actualCommentsServiceId) {
+      return res.status(400).json({ success: false, error: 'The selected template has Comments enabled but is missing Comments Service ID.' });
+    }
+
+    if (template.enableShares && !actualSharesServiceId) {
+      return res.status(400).json({ success: false, error: 'The selected template has Shares enabled but is missing Shares Service ID.' });
+    }
+
+    const viewsPanel = template.viewsPanel || panelId;
+    const likesPanel = template.likesPanel || panelId;
+    const commentsPanel = template.enableComments ? (template.commentsPanel || panelId) : null;
+    const sharesPanel = template.enableShares ? (template.sharesPanel || panelId) : null;
+
+    const templateConfig = {
+      ...template.toObject(),
+      ...(!actualLikesServiceId ? { minLikesPerCycle: 0, maxLikesPerCycle: 0, totalLikes: 0, totalHits: 0 } : {})
+    };
 
     const ordersToCreate = [];
 
@@ -78,18 +96,26 @@ router.post('/', async (req, res) => {
       if (!cleanedLink) continue;
 
       // Pass baseStartTime to algorithm
-      const { totalViews, totalLikes, schedule } = generateSchedule(templateConfig, baseStartTime);
+      const { totalViews, totalLikes, totalComments, totalShares, schedule } = generateSchedule(templateConfig, baseStartTime);
 
       ordersToCreate.push({
         socialLink: cleanedLink,
         platform: platform || 'other',
         panel: panelId,
+        viewsPanel,
+        likesPanel,
+        commentsPanel,
+        sharesPanel,
         viewsServiceId: actualViewsServiceId,
         likesServiceId: actualLikesServiceId,
+        commentsServiceId: actualCommentsServiceId,
+        sharesServiceId: actualSharesServiceId,
         template: templateId,
         customRules: templateId ? undefined : customRules,
         totalViews,
         totalLikes,
+        totalComments,
+        totalShares,
         totalTicks: schedule.length,
         schedule,
         status: 'active',

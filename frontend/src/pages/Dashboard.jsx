@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, ThumbsUp, ShoppingBag, Layers, TrendingUp, ArrowRight, Link as LinkIcon, Activity } from 'lucide-react';
+import { Eye, ThumbsUp, ShoppingBag, Layers, TrendingUp, ArrowRight, Link as LinkIcon, Activity, MessageSquare, Share2 } from 'lucide-react';
 import { getStats } from '../services/api';
 import PlatformIcon from '../components/PlatformIcon';
 
@@ -64,6 +64,63 @@ export default function Dashboard() {
         {cards.map(c => <StatCard key={c.label} {...c} />)}
       </div>
 
+      {/* Platform Categorized Stats */}
+      <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+        <Activity size={16} color="var(--cyan)" /> Platform Distribution
+      </div>
+      <div className="grid grid-4" style={{ marginBottom: 28 }}>
+        {Object.entries(s.platformStats || {}).map(([key, data]) => {
+          const colorMap = {
+            youtube: 'yt',
+            instagram: 'ig',
+            tiktok: 'tt',
+            facebook: 'fb'
+          };
+          const nameMap = {
+            youtube: 'YouTube',
+            instagram: 'Instagram',
+            tiktok: 'TikTok',
+            facebook: 'Facebook'
+          };
+          const color = colorMap[key] || 'cyan';
+          return (
+            <div key={key} className={`card border-${color}`} style={{ padding: '20px 24px', transition: 'var(--transition)' }}>
+              <div className="flex justify-between items-center" style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <PlatformIcon platform={key} size={16} />
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                    {nameMap[key]}
+                  </h3>
+                </div>
+                <span className="badge badge-completed" style={{ fontSize: 11, background: 'rgba(56,189,248,0.1)', color: 'var(--cyan)' }}>
+                  {data.activeOrders} Active
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: 'var(--text-secondary)' }}>
+                <div className="flex justify-between" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+                  <span>Total Campaigns</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{data.totalOrders}</span>
+                </div>
+                <div className="flex justify-between" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+                  <span>Views Delivered</span>
+                  <span className="text-cyan" style={{ fontWeight: 600 }}>{data.deliveredViews?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+                  <span>Likes Delivered</span>
+                  <span className="text-green" style={{ fontWeight: 600 }}>{data.deliveredLikes?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Comments & Shares</span>
+                  <span className="text-yellow" style={{ fontWeight: 600 }}>
+                    {((data.deliveredComments || 0) + (data.deliveredShares || 0))?.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Recent Orders */}
       <div className="card" style={{ marginBottom: 24 }}>
         <div className="card-body">
@@ -90,6 +147,8 @@ export default function Dashboard() {
                     <th>Status</th>
                     <th><Eye size={12} /> Views</th>
                     <th><ThumbsUp size={12} /> Likes</th>
+                    <th><MessageSquare size={12} /> Comments</th>
+                    <th><Share2 size={12} /> Shares</th>
                     <th style={{ width: 80 }}></th>
                   </tr>
                 </thead>
@@ -112,7 +171,21 @@ export default function Dashboard() {
                       <td data-label="Likes" className="text-green" style={{ fontWeight: 600 }}>
                         {order.deliveredLikes?.toLocaleString()} <span style={{ opacity: 0.5, fontSize: 11 }}>/ {order.totalLikes?.toLocaleString()}</span>
                       </td>
-                      <td>
+                      <td data-label="Comments" className="text-cyan" style={{ fontWeight: 600 }}>
+                        {order.commentsServiceId ? (
+                          <>
+                            {(order.deliveredComments || 0).toLocaleString()} <span style={{ opacity: 0.5, fontSize: 11 }}>/ {(order.totalComments || 0).toLocaleString()}</span>
+                          </>
+                        ) : '-'}
+                      </td>
+                      <td data-label="Shares" className="text-yellow" style={{ fontWeight: 600 }}>
+                        {order.sharesServiceId ? (
+                          <>
+                            {(order.deliveredShares || 0).toLocaleString()} <span style={{ opacity: 0.5, fontSize: 11 }}>/ {(order.totalShares || 0).toLocaleString()}</span>
+                          </>
+                        ) : '-'}
+                      </td>
+                      <td data-label="Action">
                         <Link to={`/orders/${order._id}`} className="btn btn-sm btn-secondary" style={{ textDecoration: 'none' }}>
                           View
                         </Link>
