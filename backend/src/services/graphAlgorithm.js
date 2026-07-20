@@ -34,10 +34,12 @@ function generateSchedule(template, startDate = new Date()) {
     minCommentsPerCycle = 0,
     maxCommentsPerCycle = 0,
     commentsStartTick = 1,
+    totalComments = 0,
     enableShares = false,
     minSharesPerCycle = 0,
     maxSharesPerCycle = 0,
     sharesStartTick = 1,
+    totalShares = 0,
     totalHits = 0
   } = template;
 
@@ -147,31 +149,87 @@ function generateSchedule(template, startDate = new Date()) {
   }
 
   // Third pass: Distribute comments (Simultaneous Delivery alongside views on random ticks)
-  if (enableComments && minCommentsPerCycle > 0) {
+  if (enableComments) {
     const commentsEligible = schedule.filter(s => s.tick >= commentsStartTick);
     if (commentsEligible.length > 0) {
-      const commentsRatio = randInt(30, 60) / 100;
-      const commentsTickCount = Math.max(1, Math.floor(commentsEligible.length * commentsRatio));
-      const commentsSlots = [...commentsEligible]
-        .sort(() => 0.5 - Math.random())
-        .slice(0, commentsTickCount);
-      for (const slot of commentsSlots) {
-        slot.comments = randInt(minCommentsPerCycle, maxCommentsPerCycle);
+      if (totalComments && totalComments > 0) {
+        // Target-based comments distribution
+        const maxPossibleTicks = Math.floor(totalComments / Math.max(minCommentsPerCycle, 1));
+        const desiredTicks = Math.max(1, Math.floor(commentsEligible.length * (randInt(40, 70) / 100)));
+        const activeTickCount = Math.min(desiredTicks, maxPossibleTicks);
+        
+        const activeSlots = [...commentsEligible]
+          .sort(() => 0.5 - Math.random())
+          .slice(0, activeTickCount)
+          .sort((a, b) => a.tick - b.tick);
+
+        let remainingComments = totalComments;
+        for (let i = 0; i < activeSlots.length; i++) {
+          const slot = activeSlots[i];
+          if (i === activeSlots.length - 1) {
+            slot.comments = remainingComments;
+          } else {
+            let share = Math.floor(remainingComments / (activeSlots.length - i));
+            let minVal = Math.max(minCommentsPerCycle, 0);
+            let maxVal = remainingComments - (activeSlots.length - i - 1) * minVal;
+            let cycleComments = randInt(minVal, Math.min(maxVal, Math.floor(share * 1.5)));
+            slot.comments = cycleComments;
+            remainingComments -= cycleComments;
+          }
+        }
+      } else if (minCommentsPerCycle > 0) {
+        // Range-based comments distribution
+        const commentsRatio = randInt(30, 60) / 100;
+        const commentsTickCount = Math.max(1, Math.floor(commentsEligible.length * commentsRatio));
+        const commentsSlots = [...commentsEligible]
+          .sort(() => 0.5 - Math.random())
+          .slice(0, commentsTickCount);
+        for (const slot of commentsSlots) {
+          slot.comments = randInt(minCommentsPerCycle, maxCommentsPerCycle);
+        }
       }
     }
   }
 
   // Fourth pass: Distribute shares (Simultaneous Delivery alongside views on random ticks)
-  if (enableShares && minSharesPerCycle > 0) {
+  if (enableShares) {
     const sharesEligible = schedule.filter(s => s.tick >= sharesStartTick);
     if (sharesEligible.length > 0) {
-      const sharesRatio = randInt(20, 50) / 100;
-      const sharesTickCount = Math.max(1, Math.floor(sharesEligible.length * sharesRatio));
-      const sharesSlots = [...sharesEligible]
-        .sort(() => 0.5 - Math.random())
-        .slice(0, sharesTickCount);
-      for (const slot of sharesSlots) {
-        slot.shares = randInt(minSharesPerCycle, maxSharesPerCycle);
+      if (totalShares && totalShares > 0) {
+        // Target-based shares distribution
+        const maxPossibleTicks = Math.floor(totalShares / Math.max(minSharesPerCycle, 1));
+        const desiredTicks = Math.max(1, Math.floor(sharesEligible.length * (randInt(40, 70) / 100)));
+        const activeTickCount = Math.min(desiredTicks, maxPossibleTicks);
+        
+        const activeSlots = [...sharesEligible]
+          .sort(() => 0.5 - Math.random())
+          .slice(0, activeTickCount)
+          .sort((a, b) => a.tick - b.tick);
+
+        let remainingShares = totalShares;
+        for (let i = 0; i < activeSlots.length; i++) {
+          const slot = activeSlots[i];
+          if (i === activeSlots.length - 1) {
+            slot.shares = remainingShares;
+          } else {
+            let share = Math.floor(remainingShares / (activeSlots.length - i));
+            let minVal = Math.max(minSharesPerCycle, 0);
+            let maxVal = remainingShares - (activeSlots.length - i - 1) * minVal;
+            let cycleShares = randInt(minVal, Math.min(maxVal, Math.floor(share * 1.5)));
+            slot.shares = cycleShares;
+            remainingShares -= cycleShares;
+          }
+        }
+      } else if (minSharesPerCycle > 0) {
+        // Range-based shares distribution
+        const sharesRatio = randInt(20, 50) / 100;
+        const sharesTickCount = Math.max(1, Math.floor(sharesEligible.length * sharesRatio));
+        const sharesSlots = [...sharesEligible]
+          .sort(() => 0.5 - Math.random())
+          .slice(0, sharesTickCount);
+        for (const slot of sharesSlots) {
+          slot.shares = randInt(minSharesPerCycle, maxSharesPerCycle);
+        }
       }
     }
   }

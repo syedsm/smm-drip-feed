@@ -598,9 +598,128 @@ tr:hover td { background: rgba(255,255,255,0.01); }
 }
 .modal-close:hover { color: var(--text-primary); }
 
-@keyframes modalIn {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
+
+/* Sidebar Modal Responsive Layout */
+.sidebar-modal {
+  max-width: 840px;
+  width: 95%;
+  height: 90vh;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.sidebar-modal-body {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
+  margin: 0;
+}
+
+.sidebar-modal-nav {
+  width: 180px;
+  background: rgba(255, 255, 255, 0.015);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.sidebar-modal-nav-button {
+  padding: 12px 14px;
+  font-size: 12px;
+  text-align: left;
+  outline: none;
+  border: none;
+  border-left: 3px solid transparent;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-modal-nav-button:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sidebar-modal-nav-button.active {
+  border-left-color: var(--cyan);
+  background: rgba(0, 212, 255, 0.04);
+  color: var(--cyan);
+}
+
+.sidebar-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.panel-service-row {
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  margin-bottom: 0px;
+}
+
+@media (max-width: 768px) {
+  .sidebar-modal {
+    height: 95vh !important;
+    width: 98% !important;
+  }
+  
+  .sidebar-modal-body {
+    flex-direction: column;
+  }
+  
+  .sidebar-modal-nav {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 6px 10px;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+  }
+  
+  .sidebar-modal-nav::-webkit-scrollbar {
+    height: 3px;
+  }
+  
+  .sidebar-modal-nav-button {
+    padding: 6px 12px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    flex-direction: row;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  
+  .sidebar-modal-nav-button.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--cyan);
+  }
+  
+  .sidebar-modal-content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 580px) {
+  .panel-service-row {
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 
 /* ─── Spinner & Helpers ──────────────────────────────────────────────────────── */

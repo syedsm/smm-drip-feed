@@ -55,6 +55,24 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [templates, setTemplates] = useState([]);
+  const [promoTemplateId, setPromoTemplateId] = useState('');
+
+  const CATEGORY_PROGRESSION = {
+    'Starter': 'Growth',
+    'Growth': 'Momentum',
+    'Momentum': 'Viral',
+    'Viral': 'Elite'
+  };
+  const nextCategory = order && order.template ? CATEGORY_PROGRESSION[order.template.category] : null;
+  const nextTemplate = nextCategory ? templates.find(t => t.category === nextCategory) : null;
+
+  useEffect(() => {
+    if (nextTemplate) {
+      setPromoTemplateId(nextTemplate._id);
+    } else if (templates.length > 0 && !promoTemplateId) {
+      setPromoTemplateId(templates[0]._id);
+    }
+  }, [nextTemplate, templates, promoTemplateId]);
 
   const load = useCallback(async () => {
     try {
@@ -137,14 +155,7 @@ export default function OrderDetail() {
     ? ((order.deliveredLikes / order.deliveredViews) * 100).toFixed(1)
     : '0.0';
 
-  const CATEGORY_PROGRESSION = {
-    'Starter': 'Growth',
-    'Growth': 'Momentum',
-    'Momentum': 'Viral',
-    'Viral': 'Elite'
-  };
-  const nextCategory = order && order.template ? CATEGORY_PROGRESSION[order.template.category] : null;
-  const nextTemplate = nextCategory ? templates.find(t => t.category === nextCategory) : null;
+
 
   return (
     <div>
@@ -201,28 +212,45 @@ export default function OrderDetail() {
       </div>
 
       {/* Next Stage Campaign Promotion Suggestion Box */}
-      {order.status === 'completed' && nextTemplate && (
-        <div className="card" style={{ marginBottom: 20, border: '1.5px dashed var(--green)', background: 'var(--green-dim)' }}>
+      {order.status === 'completed' && (
+        <div className="card" style={{ marginBottom: 20, border: '1px solid var(--border)', background: 'rgba(0, 212, 255, 0.02)' }}>
           <div className="card-body flex justify-between items-center" style={{ padding: '16px 20px', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 260 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                🚀 Campaign Completed — Next Stage Ready!
+                🚀 Campaign Completed — Run Another Preset!
               </h3>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-                To grow naturally to 5k–10k+ views with a <strong>0 bot detector score</strong>, promote this target to the <strong>{nextCategory} Stage</strong>.
+                Select another campaign template configuration below to run again on this clip profile link.
               </p>
-              <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12, flexWrap: 'wrap' }}>
-                <span className="text-secondary">📈 <strong>Drip Views</strong>: {nextTemplate.minViewsPerCycle}-{nextTemplate.maxViewsPerCycle} per cycle (up to {nextTemplate.maxViewsTotal?.toLocaleString()} views total)</span>
-                <span className="text-secondary">👍 <strong>Likes Delay</strong>: shifts to cycle {nextTemplate.likesStartTick} to ensure natural growth sig</span>
-              </div>
             </div>
-            <Link 
-              to={`/orders?link=${encodeURIComponent(order.socialLink)}&template=${nextTemplate._id}`} 
-              className="btn btn-primary"
-              style={{ textDecoration: 'none' }}
-            >
-              Promote to {nextCategory}
-            </Link>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <select 
+                className="form-select" 
+                style={{ minWidth: 240, height: 34, padding: '4px 12px', fontSize: 12, borderRadius: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
+                value={promoTemplateId} 
+                onChange={(e) => setPromoTemplateId(e.target.value)}
+              >
+                <option value="">-- Choose Campaign Preset --</option>
+                {templates.map(t => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} ({t.category} — {t.type === 'bulk' ? 'Bulk' : 'Single'})
+                  </option>
+                ))}
+              </select>
+              <Link 
+                to={`/orders?link=${encodeURIComponent(order.socialLink)}&template=${promoTemplateId}`} 
+                className="btn btn-primary"
+                onClick={(e) => {
+                  if (!promoTemplateId) {
+                    e.preventDefault();
+                    toast.error('Please choose a template configuration first');
+                  }
+                }}
+                style={{ textDecoration: 'none', background: 'var(--cyan)', border: 'none', color: 'var(--bg-primary)', height: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                Start Drip-Feed
+              </Link>
+            </div>
           </div>
         </div>
       )}

@@ -42,6 +42,10 @@ router.post('/', async (req, res) => {
     if (!body.name) {
       return res.status(400).json({ success: false, error: 'Template name is required' });
     }
+    const existing = await Template.findOne({ name: body.name });
+    if (existing) {
+      return res.status(400).json({ success: false, error: 'Template name must be unique' });
+    }
     if (body.minViewsPerCycle && body.maxViewsPerCycle && parseInt(body.minViewsPerCycle) > parseInt(body.maxViewsPerCycle)) {
       return res.status(400).json({ success: false, error: 'minViewsPerCycle cannot be > maxViewsPerCycle' });
     }
@@ -77,6 +81,13 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const body = req.body;
+
+    if (body.name) {
+      const existing = await Template.findOne({ name: body.name, _id: { $ne: req.params.id } });
+      if (existing) {
+        return res.status(400).json({ success: false, error: 'Template name must be unique' });
+      }
+    }
 
     if (body.minViewsPerCycle && body.maxViewsPerCycle && parseInt(body.minViewsPerCycle) > parseInt(body.maxViewsPerCycle)) {
       return res.status(400).json({ success: false, error: 'minViewsPerCycle cannot be > maxViewsPerCycle' });

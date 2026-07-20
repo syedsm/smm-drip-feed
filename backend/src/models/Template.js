@@ -5,6 +5,13 @@ const templateSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     description: { type: String, default: '' },
+    type: {
+      type: String,
+      enum: ['single', 'bulk'],
+      required: true,
+      default: 'single',
+      index: true
+    },
     category: {
       type: String,
       enum: ['Starter', 'Growth', 'Momentum', 'Viral', 'Elite'],
@@ -12,11 +19,22 @@ const templateSchema = new mongoose.Schema(
       default: 'Starter',
       index: true
     },
+    platform: {
+      type: String,
+      enum: ['Instagram', 'TikTok', 'YouTube', 'Facebook'],
+      default: 'Instagram',
+      index: true
+    },
     growthType: {
       type: String,
-      enum: ['Slow Organic', 'Balanced', 'Aggressive', 'Custom'],
+      enum: ['Conservative', 'Balanced', 'Aggressive', 'Viral'],
       required: true,
       default: 'Balanced'
+    },
+    engagementMode: {
+      type: String,
+      enum: ['fixed', 'percentage'],
+      default: 'fixed'
     },
     
     // Service Panels Selection
@@ -34,7 +52,17 @@ const templateSchema = new mongoose.Schema(
     // Views Configuration
     minViewsPerCycle: { type: Number, required: true, min: 1, default: 100 },
     maxViewsPerCycle: { type: Number, required: true, min: 1, default: 250 },
-    maxViewsTotal: { type: Number, required: true, min: 1, default: 5000 },
+    maxViewsTotal: { type: Number, min: 0, default: 5000 },
+    
+    // Bulk Target Ranges
+    minViewsTotal: { type: Number, default: 0 },
+    minLikesTotal: { type: Number, default: 0 },
+    maxLikesTotal: { type: Number, default: 0 },
+    minCommentsTotal: { type: Number, default: 0 },
+    maxCommentsTotal: { type: Number, default: 0 },
+    minSharesTotal: { type: Number, default: 0 },
+    maxSharesTotal: { type: Number, default: 0 },
+
     viewsRandomizationPct: { type: Number, default: 10, min: 0, max: 100 },
     viewsPauseLogic: { type: Boolean, default: false },
     accelerationCurve: {
@@ -47,8 +75,12 @@ const templateSchema = new mongoose.Schema(
     likesStartTick: { type: Number, default: 3, min: 1 },
     minLikesPerCycle: { type: Number, default: 0, min: 0 },
     maxLikesPerCycle: { type: Number, default: 0, min: 0 },
+    totalLikes: { type: Number, default: 0 },
     likesTotalHits: { type: Number, default: 0, min: 0 }, // Random hits
     likesDelayMins: { type: Number, default: 0, min: 0 }, // Likes delay
+    likesRatioMin: { type: Number, default: 3.0, min: 0 },
+    likesRatioMax: { type: Number, default: 5.0, min: 0 },
+    maxLikeRatioPct: { type: Number, default: 10.0 },
 
     // Comments Configuration
     enableComments: { type: Boolean, default: false },
@@ -56,6 +88,9 @@ const templateSchema = new mongoose.Schema(
     maxCommentsPerCycle: { type: Number, default: 5, min: 0 },
     commentsStartTick: { type: Number, default: 3, min: 1 },
     commentsDelayMins: { type: Number, default: 0, min: 0 },
+    commentsRatioMin: { type: Number, default: 0.3, min: 0 },
+    commentsRatioMax: { type: Number, default: 0.8, min: 0 },
+    maxCommentRatioPct: { type: Number, default: 3.0 },
 
     // Shares Configuration
     enableShares: { type: Boolean, default: false },
@@ -63,6 +98,10 @@ const templateSchema = new mongoose.Schema(
     maxSharesPerCycle: { type: Number, default: 15, min: 0 },
     sharesStartTick: { type: Number, default: 2, min: 1 },
     sharesDelayMins: { type: Number, default: 0, min: 0 },
+    sharesRatioMin: { type: Number, default: 0.2, min: 0 },
+    sharesRatioMax: { type: Number, default: 0.6, min: 0 },
+    maxShareRatioPct: { type: Number, default: 2.0 },
+    engagementVariancePct: { type: Number, default: 10.0, min: 0, max: 100 },
 
     // Timing Configuration
     minGapMins: { type: Number, required: true, min: 1, default: 60 },

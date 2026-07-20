@@ -15,6 +15,7 @@ router.get('/', async (req, res) => {
       totalTemplates,
       viewsAgg,
       likesAgg,
+      platformAgg,
     ] = await Promise.all([
       Order.countDocuments(),
       Order.countDocuments({ status: { $in: ['running', 'pending'] } }),

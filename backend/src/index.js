@@ -28,11 +28,11 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
 
 const server = http.createServer(app);
-const io = new Server(server, { 
-  cors: { 
+const io = new Server(server, {
+  cors: {
     origin: process.env.FRONTEND_URL || '*',
     methods: ["GET", "POST"]
-  } 
+  }
 });
 
 // Socket.io connection logic
@@ -85,11 +85,11 @@ app.get('/api/health', async (req, res) => {
   try {
     // Ping DB to keep connection active
     await mongoose.connection.db.admin().ping();
-    res.json({ 
-      success: true, 
-      status: 'active', 
+    res.json({
+      success: true,
+      status: 'active',
       uptime: process.uptime(),
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString()
     });
   } catch (err) {
     console.error('[Health Check Error]', err.message);
@@ -119,7 +119,7 @@ async function seedDefaultTemplates() {
     const panels = await Panel.find({ isActive: true });
     const defaultPanel = panels.find(p => p.isDefault) || panels[0] || null;
     const defaultPanelId = defaultPanel ? defaultPanel._id : null;
-    
+
     const presets = [
       {
         name: 'Starter Template Default',
@@ -250,6 +250,154 @@ async function seedDefaultTemplates() {
         commentsDelayMins: 20,
         minGapMins: 5,
         maxGapMins: 15,
+      },
+      // --- BULK TARGET PRESET TEMPLATES ---
+      {
+        name: 'Bulk Starter Preset Default',
+        description: 'Starter bulk target preset, aiming for a total views range of 1K–5K. Optimised with proportional, safe likes bounds to prevent spam detection.',
+        type: 'bulk',
+        category: 'Starter',
+        growthType: 'Balanced',
+        viewsPanel: defaultPanelId,
+        likesPanel: defaultPanelId,
+        commentsPanel: defaultPanelId,
+        sharesPanel: defaultPanelId,
+        viewsServiceId: '1001',
+        likesServiceId: '1002',
+        commentsServiceId: '1003',
+        sharesServiceId: '1004',
+        minViewsPerCycle: 100,
+        maxViewsPerCycle: 250,
+        minViewsTotal: 1000,
+        maxViewsTotal: 5000,
+        minLikesTotal: 50,
+        maxLikesTotal: 250,
+        minGapMins: 45,
+        maxGapMins: 90,
+      },
+      {
+        name: 'Bulk Growth Preset Default',
+        description: 'Mid-stage scaling bulk preset targeting a total of 5K–25K views. Includes balanced automatic comments and shares ranges.',
+        type: 'bulk',
+        category: 'Growth',
+        growthType: 'Balanced',
+        viewsPanel: defaultPanelId,
+        likesPanel: defaultPanelId,
+        commentsPanel: defaultPanelId,
+        sharesPanel: defaultPanelId,
+        viewsServiceId: '1001',
+        likesServiceId: '1002',
+        commentsServiceId: '1003',
+        sharesServiceId: '1004',
+        minViewsPerCycle: 300,
+        maxViewsPerCycle: 800,
+        minViewsTotal: 5000,
+        maxViewsTotal: 25000,
+        minLikesTotal: 250,
+        maxLikesTotal: 1250,
+        enableComments: true,
+        commentsStartTick: 3,
+        minCommentsTotal: 10,
+        maxCommentsTotal: 50,
+        enableShares: true,
+        sharesStartTick: 2,
+        minSharesTotal: 25,
+        maxSharesTotal: 125,
+        minGapMins: 30,
+        maxGapMins: 90,
+      },
+      {
+        name: 'Bulk Momentum Preset Default',
+        description: 'Heavy engagement bulk preset targeting a total views scale of 25K–100K. Distributes likes, comments, and shares across cycles dynamically.',
+        type: 'bulk',
+        category: 'Momentum',
+        growthType: 'Balanced',
+        viewsPanel: defaultPanelId,
+        likesPanel: defaultPanelId,
+        commentsPanel: defaultPanelId,
+        sharesPanel: defaultPanelId,
+        viewsServiceId: '1001',
+        likesServiceId: '1002',
+        commentsServiceId: '1003',
+        sharesServiceId: '1004',
+        minViewsPerCycle: 1000,
+        maxViewsPerCycle: 3000,
+        minViewsTotal: 25000,
+        maxViewsTotal: 100000,
+        minLikesTotal: 1250,
+        maxLikesTotal: 5000,
+        enableComments: true,
+        commentsStartTick: 3,
+        minCommentsTotal: 50,
+        maxCommentsTotal: 200,
+        enableShares: true,
+        sharesStartTick: 2,
+        minSharesTotal: 125,
+        maxSharesTotal: 500,
+        minGapMins: 20,
+        maxGapMins: 60,
+      },
+      {
+        name: 'Bulk Viral Preset Default',
+        description: 'Viral explosion bulk distribution template boosting total views up to 100K–500K with highly proportional engagement spikes.',
+        type: 'bulk',
+        category: 'Viral',
+        growthType: 'Aggressive',
+        viewsPanel: defaultPanelId,
+        likesPanel: defaultPanelId,
+        commentsPanel: defaultPanelId,
+        sharesPanel: defaultPanelId,
+        viewsServiceId: '1001',
+        likesServiceId: '1002',
+        commentsServiceId: '1003',
+        sharesServiceId: '1004',
+        minViewsPerCycle: 3000,
+        maxViewsPerCycle: 10000,
+        minViewsTotal: 100000,
+        maxViewsTotal: 500000,
+        minLikesTotal: 5000,
+        maxLikesTotal: 25000,
+        enableComments: true,
+        commentsStartTick: 2,
+        minCommentsTotal: 200,
+        maxCommentsTotal: 1000,
+        enableShares: true,
+        sharesStartTick: 2,
+        minSharesTotal: 500,
+        maxSharesTotal: 2500,
+        minGapMins: 10,
+        maxGapMins: 30,
+      },
+      {
+        name: 'Bulk Elite Preset Default',
+        description: 'Elite scaling engine targeting high-volume bulk campaigns between 500K–1M+ total views and top-tier metrics.',
+        type: 'bulk',
+        category: 'Elite',
+        growthType: 'Aggressive',
+        viewsPanel: defaultPanelId,
+        likesPanel: defaultPanelId,
+        commentsPanel: defaultPanelId,
+        sharesPanel: defaultPanelId,
+        viewsServiceId: '1001',
+        likesServiceId: '1002',
+        commentsServiceId: '1003',
+        sharesServiceId: '1004',
+        minViewsPerCycle: 10000,
+        maxViewsPerCycle: 35000,
+        minViewsTotal: 500000,
+        maxViewsTotal: 1000000,
+        minLikesTotal: 25000,
+        maxLikesTotal: 50000,
+        enableComments: true,
+        commentsStartTick: 2,
+        minCommentsTotal: 1000,
+        maxCommentsTotal: 2000,
+        enableShares: true,
+        sharesStartTick: 2,
+        minSharesTotal: 2500,
+        maxSharesTotal: 5000,
+        minGapMins: 5,
+        maxGapMins: 15,
       }
     ];
 
@@ -261,7 +409,7 @@ async function seedDefaultTemplates() {
         seedCount++;
       }
     }
-    
+
     if (seedCount > 0) {
       console.log(`[Seeder] Seeded ${seedCount} default progression templates successfully!`);
     } else {
@@ -293,11 +441,15 @@ mongoose
     const orderCollection = mongoose.connection.collection('orders');
     const changeStream = orderCollection.watch();
 
+    changeStream.on('error', (err) => {
+      console.error('[ChangeStream Error]', err.message);
+    });
+
     changeStream.on('change', async (change) => {
       if (change.operationType === 'update' || change.operationType === 'replace') {
         const orderId = change.documentKey._id;
         const updatedOrder = await Order.findById(orderId);
-        
+
         if (updatedOrder) {
           io.emit('order-update', {
             orderId: updatedOrder._id,

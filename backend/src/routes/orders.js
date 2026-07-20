@@ -4,7 +4,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 const Template = require('../models/Template');
 const DeliveryLog = require('../models/DeliveryLog');
-const { generateSchedule } = require('../services/graphAlgorithm');
+const { generateSchedule, randInt } = require('../services/graphAlgorithm');
 
 const DEFAULT_TICKS = 10; // Default number of delivery rounds
 
@@ -91,12 +91,73 @@ router.post('/', async (req, res) => {
     const baseStartTime = new Date(Date.now() + (parseInt(startDelay) || 0) * 60000);
 
     // Process each link individually
-    for (const link of links) {
-      const cleanedLink = link.trim();
+    for (const linkObj of links) {
+      let cleanedLink = '';
+      let customViews = null;
+      let customLikes = null;
+      let customComments = null;
+      let customShares = null;
+
+      if (linkObj && typeof linkObj === 'object') {
+        cleanedLink = linkObj.url ? linkObj.url.trim() : '';
+        customViews = Number(linkObj.totalViews);
+        customLikes = Number(linkObj.totalLikes);
+        customComments = Number(linkObj.totalComments);
+        customShares = Number(linkObj.totalShares);
+      } else if (typeof linkObj === 'string') {
+        cleanedLink = linkObj.trim();
+      }
+
       if (!cleanedLink) continue;
 
+      let linkConfig = { ...templateConfig };
+      
+      // Determine views target dynamically per clip/link
+      const viewsMax = template.maxViewsTotal || 1000;
+      const viewsMin = template.minViewsTotal || viewsMax;
+      const randViews = (customViews !== null && !isNaN(customViews) && customViews > 0)
+        ? customViews
+        : (viewsMin === viewsMax ? viewsMax : randInt(viewsMin, viewsMax));
+      linkConfig.maxViewsTotal = randViews;
+
+      // Determine likes target dynamically per clip/link
+      if (actualLikesServiceId) {
+        const likesMax = template.maxLikesTotal || 0;
+        const likesMin = template.minLikesTotal || likesMax;
+        const randLikes = (customLikes !== null && !isNaN(customLikes) && customLikes > 0)
+          ? customLikes
+          : (likesMin === likesMax ? likesMax : randInt(likesMin, likesMax));
+        linkConfig.totalLikes = randLikes;
+      } else {
+        linkConfig.totalLikes = 0;
+      }
+
+      // Determine comments target dynamically per clip/link
+      if (template.enableComments && actualCommentsServiceId) {
+        const commentsMax = template.maxCommentsTotal || 0;
+        const commentsMin = template.minCommentsTotal || commentsMax;
+        const randComments = (customComments !== null && !isNaN(customComments) && customComments > 0)
+          ? customComments
+          : (commentsMin === commentsMax ? commentsMax : randInt(commentsMin, commentsMax));
+        linkConfig.totalComments = randComments;
+      } else {
+        linkConfig.totalComments = 0;
+      }
+
+      // Determine shares target dynamically per clip/link
+      if (template.enableShares && actualSharesServiceId) {
+        const sharesMax = template.maxSharesTotal || 0;
+        const sharesMin = template.minSharesTotal || sharesMax;
+        const randShares = (customShares !== null && !isNaN(customShares) && customShares > 0)
+          ? customShares
+          : (sharesMin === sharesMax ? sharesMax : randInt(sharesMin, sharesMax));
+        linkConfig.totalShares = randShares;
+      } else {
+        linkConfig.totalShares = 0;
+      }
+
       // Pass baseStartTime to algorithm
-      const { totalViews, totalLikes, totalComments, totalShares, schedule } = generateSchedule(templateConfig, baseStartTime);
+      const { totalViews, totalLikes, totalComments, totalShares, schedule } = generateSchedule(linkConfig, baseStartTime);
 
       ordersToCreate.push({
         socialLink: cleanedLink,
